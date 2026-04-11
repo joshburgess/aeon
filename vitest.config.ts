@@ -8,6 +8,7 @@ export default defineConfig({
       "@pulse/core": path.resolve(__dirname, "packages/core/src/index.ts"),
       "@pulse/scheduler": path.resolve(__dirname, "packages/scheduler/src/index.ts"),
       "@pulse/test": path.resolve(__dirname, "packages/test/src/index.ts"),
+      "@pulse/dom": path.resolve(__dirname, "packages/dom/src/index.ts"),
     },
   },
   test: {

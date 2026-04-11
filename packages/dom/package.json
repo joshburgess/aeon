@@ -1,5 +1,5 @@
 {
-  "name": "@pulse/test",
+  "name": "@pulse/dom",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,8 +26,7 @@
   },
   "dependencies": {
     "@pulse/types": "workspace:*",
-    "@pulse/core": "workspace:*",
-    "@pulse/scheduler": "workspace:*"
+    "@pulse/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

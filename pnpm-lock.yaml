@@ -68,6 +68,19 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/dom:
+    dependencies:
+      '@pulse/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pulse/types':
+        specifier: workspace:*
+        version: link:../types
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/scheduler:
     dependencies:
       '@pulse/types':
