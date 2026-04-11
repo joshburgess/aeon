@@ -1,0 +1,53 @@
+/**
+ * Benchmark: scan over 1M integers.
+ *
+ * Tests running accumulation performance — every element flows
+ * through the scan function and produces output.
+ */
+
+import { bench, describe } from "vitest";
+
+// --- Pulse ---
+import { fromArray, scan, drain } from "@pulse/core";
+import { VirtualScheduler } from "@pulse/scheduler";
+
+// --- @most/core ---
+import { scan as mostScan, runEffects } from "@most/core";
+import { newDefaultScheduler } from "@most/scheduler";
+import type { Stream } from "@most/types";
+import { newStream } from "@most/core";
+
+// --- RxJS ---
+import { from as rxFrom, scan as rxScan, lastValueFrom, last } from "rxjs";
+
+// --- Helpers ---
+import { add, range } from "./helpers.js";
+
+const N = 1_000_000;
+const arr = range(N);
+
+const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
+  newStream((sink, scheduler) => {
+    const t = scheduler.currentTime();
+    for (let i = 0; i < values.length; i++) {
+      sink.event(t, values[i]!);
+    }
+    sink.end(t);
+    return { dispose() {} };
+  });
+
+describe("scan (1M integers)", () => {
+  bench("pulse", async () => {
+    const scheduler = new VirtualScheduler();
+    await drain(scan(add, 0, fromArray(arr)), scheduler);
+  });
+
+  bench("@most/core", async () => {
+    const scheduler = newDefaultScheduler();
+    await runEffects(mostScan(add, 0, mostFromArray(arr)), scheduler);
+  });
+
+  bench("rxjs", async () => {
+    await lastValueFrom(rxFrom(arr).pipe(rxScan(add, 0), last()));
+  });
+});

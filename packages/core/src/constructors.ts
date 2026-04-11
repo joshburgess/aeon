@@ -1,0 +1,205 @@
+/**
+ * Event constructors.
+ *
+ * Each constructor creates an Event<A, E> backed by a Source
+ * that produces events according to its denotational meaning.
+ */
+
+import {
+  DURATION_ZERO,
+  type Duration,
+  type Event,
+  type Scheduler,
+  type Sink,
+  type Source,
+  type Time,
+  timeAdd,
+  type Disposable,
+} from "@pulse/types";
+import { disposeNone } from "./internal/dispose.js";
+import { _createEvent } from "./internal/event.js";
+
+// --- Source classes for V8 hidden class stability ---
+
+class EmptySource<A> implements Source<A, never> {
+  run(sink: Sink<A, never>, scheduler: Scheduler) {
+    sink.end(scheduler.currentTime());
+    return disposeNone;
+  }
+}
+
+class NeverSource<A> implements Source<A, never> {
+  run() {
+    return disposeNone;
+  }
+}
+
+class NowSource<A> implements Source<A, never> {
+  declare readonly value: A;
+  constructor(value: A) {
+    this.value = value;
+  }
+  run(sink: Sink<A, never>, scheduler: Scheduler) {
+    const t = scheduler.currentTime();
+    sink.event(t, this.value);
+    sink.end(t);
+    return disposeNone;
+  }
+}
+
+class ArraySource<A> implements Source<A, never> {
+  declare readonly values: readonly A[];
+  constructor(values: readonly A[]) {
+    this.values = values;
+  }
+  run(sink: Sink<A, never>, scheduler: Scheduler) {
+    const t = scheduler.currentTime();
+    const values = this.values;
+    for (let i = 0; i < values.length; i++) {
+      sink.event(t, values[i]!);
+    }
+    sink.end(t);
+    return disposeNone;
+  }
+}
+
+// --- Singletons for empty/never ---
+
+const EMPTY_SOURCE = new EmptySource<never>();
+const NEVER_SOURCE = new NeverSource<never>();
+
+// --- Public API ---
+
+/**
+ * An Event that ends immediately without emitting any values.
+ *
+ * Denotation: `[]` — the empty sequence.
+ */
+export const empty = <A>(): Event<A, never> =>
+  _createEvent(EMPTY_SOURCE as unknown as Source<A, never>);
+
+/**
+ * An Event that never emits and never ends.
+ *
+ * Denotation: `_|_` — bottom / divergent.
+ */
+export const never = <A>(): Event<A, never> =>
+  _createEvent(NEVER_SOURCE as unknown as Source<A, never>);
+
+/**
+ * An Event that emits a single value at time 0, then ends.
+ *
+ * Denotation: `[(0, value)]`
+ */
+export const now = <A>(value: A): Event<A, never> =>
+  _createEvent(new NowSource(value));
+
+class AtSource<A> implements Source<A, never> {
+  declare readonly time: Time;
+  declare readonly value: A;
+
+  constructor(time: Time, value: A) {
+    this.time = time;
+    this.value = value;
+  }
+
+  run(sink: Sink<A, never>, scheduler: Scheduler): Disposable {
+    const val = this.value;
+    const delay = ((this.time as number) - (scheduler.currentTime() as number)) as Duration;
+    return scheduler.scheduleTask(delay, {
+      run(t: Time) {
+        sink.event(t, val);
+        sink.end(t);
+      },
+      error(t: Time, err: unknown) {
+        sink.error(t, err as never);
+      },
+      dispose() {},
+    });
+  }
+}
+
+/**
+ * An Event that emits a single value at a specific time, then ends.
+ *
+ * Denotation: `[(time, value)]`
+ */
+export const at = <A>(time: Time, value: A): Event<A, never> =>
+  _createEvent(new AtSource(time, value));
+
+/**
+ * An Event that emits all values from an array synchronously, then ends.
+ *
+ * Denotation: `[(t, values[0]), (t, values[1]), ...]` all at the same time.
+ */
+export const fromArray = <A>(values: readonly A[]): Event<A, never> =>
+  _createEvent(new ArraySource(values));
+
+class PeriodicSource implements Source<undefined, never> {
+  declare readonly period: Duration;
+
+  constructor(period: Duration) {
+    this.period = period;
+  }
+
+  run(sink: Sink<undefined, never>, scheduler: Scheduler): Disposable {
+    const period = this.period;
+    let disposed = false;
+
+    const task = {
+      run(t: Time) {
+        if (!disposed) {
+          sink.event(t, undefined);
+          scheduler.scheduleTask(period, task);
+        }
+      },
+      error(t: Time, err: unknown) {
+        sink.error(t, err as never);
+      },
+      dispose() {
+        disposed = true;
+      },
+    };
+
+    const st = scheduler.scheduleTask(period, task);
+    return {
+      dispose() {
+        disposed = true;
+        st.dispose();
+      },
+    };
+  }
+}
+
+/**
+ * An Event that emits undefined at regular intervals.
+ *
+ * Denotation: `[(period, undefined), (2*period, undefined), ...]`
+ */
+export const periodic = (period: Duration): Event<undefined, never> =>
+  _createEvent(new PeriodicSource(period));
+
+class IterableSource<A> implements Source<A, never> {
+  declare readonly iterable: Iterable<A>;
+
+  constructor(iterable: Iterable<A>) {
+    this.iterable = iterable;
+  }
+
+  run(sink: Sink<A, never>, scheduler: Scheduler): Disposable {
+    const t = scheduler.currentTime();
+    for (const value of this.iterable) {
+      sink.event(t, value);
+    }
+    sink.end(t);
+    return disposeNone;
+  }
+}
+
+/**
+ * Create an Event from an iterable, emitting all values synchronously.
+ *
+ * Denotation: `[(t, v) for v in iterable]` all at the same time.
+ */
+export const fromIterable = <A>(iterable: Iterable<A>): Event<A, never> =>
+  _createEvent(new IterableSource(iterable));

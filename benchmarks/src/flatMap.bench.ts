@@ -1,0 +1,65 @@
+/**
+ * Benchmark: flatMap (chain) — 1000 outer × 1000 inner.
+ *
+ * Tests the overhead of creating and subscribing to inner streams.
+ */
+
+import { bench, describe } from "vitest";
+
+// --- Pulse ---
+import { fromArray, chain, drain } from "@pulse/core";
+import { VirtualScheduler } from "@pulse/scheduler";
+
+// --- @most/core ---
+import { chain as mostChain, runEffects } from "@most/core";
+import { newDefaultScheduler } from "@most/scheduler";
+import type { Stream } from "@most/types";
+import { newStream } from "@most/core";
+
+// --- RxJS ---
+import { from as rxFrom, mergeMap, EMPTY as rxEmpty, lastValueFrom } from "rxjs";
+
+// --- Helpers ---
+import { range } from "./helpers.js";
+
+const OUTER = 1000;
+const INNER = 1000;
+const outerArr = range(OUTER);
+const innerArr = range(INNER);
+
+const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
+  newStream((sink, scheduler) => {
+    const t = scheduler.currentTime();
+    for (let i = 0; i < values.length; i++) {
+      sink.event(t, values[i]!);
+    }
+    sink.end(t);
+    return { dispose() {} };
+  });
+
+describe("flatMap (1000 × 1000)", () => {
+  bench("pulse", async () => {
+    const scheduler = new VirtualScheduler();
+    await drain(
+      chain(() => fromArray(innerArr), fromArray(outerArr)),
+      scheduler,
+    );
+  });
+
+  bench("@most/core", async () => {
+    const scheduler = newDefaultScheduler();
+    await runEffects(
+      mostChain(() => mostFromArray(innerArr), mostFromArray(outerArr)),
+      scheduler,
+    );
+  });
+
+  bench("rxjs", async () => {
+    await lastValueFrom(
+      rxFrom(outerArr).pipe(
+        mergeMap(() => rxFrom(innerArr), 1),
+      ),
+      { defaultValue: undefined },
+    );
+  });
+});

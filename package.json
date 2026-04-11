@@ -1,0 +1,26 @@
+{
+  "name": "pulse-monorepo",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "clean": "pnpm -r run clean",
+    "bench": "vitest bench --run",
+    "bench:watch": "vitest bench"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@swc/core": "^1.9.0",
+    "rollup": "^4.28.0",
+    "rollup-plugin-swc3": "^0.12.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
