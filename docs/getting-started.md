@@ -279,8 +279,157 @@ Pulse automatically fuses adjacent operators at construction time. These are tra
 
 No configuration needed — these happen automatically.
 
+## API Reference
+
+### Constructors
+
+| Constructor | Description |
+|---|---|
+| `empty()` | Emits nothing, ends immediately |
+| `never()` | Never emits, never ends |
+| `now(x)` | One value at current time |
+| `at(t, x)` | One value at time `t` |
+| `fromArray(xs)` | All values synchronously |
+| `fromIterable(iter)` | All values from any iterable |
+| `periodic(d)` | Infinite ticks at interval `d` |
+| `range(start, count)` | Sequence of `count` integers from `start` |
+| `fromPromise(p)` | Single value from a Promise |
+| `fromAsyncIterable(iter)` | Values from an async iterable |
+| `createAdapter()` | Imperative push source |
+
+### Transform
+
+| Operator | Description |
+|---|---|
+| `map(f, e)` | Transform each value |
+| `filter(p, e)` | Keep values matching predicate |
+| `tap(f, e)` | Side-effect without altering values |
+| `constant(v, e)` | Replace all values with `v` |
+| `scan(f, seed, e)` | Running accumulation |
+| `distinctUntilChanged(e, eq?)` | Suppress consecutive duplicates |
+| `startWith(v, e)` | Prepend an initial value |
+| `pairwise(e)` | Emit `[prev, curr]` tuples |
+| `defaultIfEmpty(v, e)` | Fallback if stream completes empty |
+
+### Slicing
+
+| Operator | Description |
+|---|---|
+| `take(n, e)` | First `n` values |
+| `skip(n, e)` | Drop first `n` values |
+| `takeWhile(p, e)` | Take while predicate holds |
+| `skipWhile(p, e)` | Skip while predicate holds |
+| `slice(start, end, e)` | Values in index range |
+| `first(e, pred?)` | First value (optionally matching predicate) |
+| `last(e, pred?)` | Final value (optionally matching predicate) |
+| `elementAt(n, e)` | Only the nth value |
+| `until(signal, e)` | Take until signal fires |
+| `since(signal, e)` | Skip until signal fires |
+
+### Combining
+
+| Operator | Description |
+|---|---|
+| `merge(...es)` | Interleave multiple streams |
+| `combine(f, a, b)` | Combine latest from two streams |
+| `zip(a, b)` | Pair values by index |
+| `race(...es)` | First to emit wins, others disposed |
+| `forkJoin(...es)` | Array of final values when all complete |
+| `withLatestFrom(f, sampled, sampler)` | Combine sampler events with latest from sampled |
+
+### Higher-order
+
+| Operator | Description |
+|---|---|
+| `chain(f, e)` / `concatMap(f, e)` | Map to inner stream, flatten sequentially |
+| `mergeMapConcurrently(f, n, e)` | Map to inner stream, flatten with concurrency limit |
+| `exhaustMap(f, e)` | Map to inner stream, ignore while inner active |
+| `switchLatest(ee)` | Flatten, cancelling previous inner on new outer |
+| `mapAsync(f, n, e)` | Map to Promise, resolve with concurrency limit |
+
+### Error handling
+
+| Operator | Description |
+|---|---|
+| `catchError(handler, e)` | Recover from errors with a new stream |
+| `mapError(f, e)` | Transform error type |
+| `throwError(err)` | Emit an error immediately |
+| `timeout(d, e)` | Error if no event within duration |
+| `retry(n, e, delay?)` | Resubscribe on error up to `n` times |
+
+### Time
+
+| Operator | Description |
+|---|---|
+| `debounce(d, e)` | Emit latest after silence of duration `d` |
+| `throttle(d, e)` | At most one emission per duration `d` |
+| `delay(d, e)` | Shift all emissions forward by `d` |
+| `bufferCount(n, e)` | Collect values into arrays of size `n` |
+| `bufferTime(d, e)` | Collect values into arrays by time window |
+
+### Aggregation
+
+| Operator | Description |
+|---|---|
+| `count(e)` | Total number of values on end |
+| `every(p, e)` | `true` if all match, `false` on first failure |
+
+### Terminal (activate the stream)
+
+| Operator | Description |
+|---|---|
+| `reduce(f, seed, e, scheduler)` | Fold to single value |
+| `observe(f, e, scheduler)` | Run side-effect for each value |
+| `drain(e, scheduler)` | Run stream, discard values |
+
+### Utilities
+
+| Operator | Description |
+|---|---|
+| `multicast(e)` | Share a single subscription |
+| `share(bufferSize, e)` | Share with replay buffer |
+| `finalize(cleanup, e)` | Run cleanup on end/error/dispose |
+| `toAsyncIterator(e, scheduler)` | Convert to async iterator |
+
+### Behavior constructors
+
+| Constructor | Description |
+|---|---|
+| `constantB(v)` | Constant value at all times |
+| `fromFunction(f)` | Behavior from `Time -> A` |
+| `time` | Identity behavior (returns current time) |
+| `pureB(v)` | Alias for `constantB` |
+| `stepper(init, e)` | Hold latest event value |
+| `accumB(f, init, e, scheduler)` | Fold events into a behavior |
+| `switcher(init, ee)` | Switch to latest inner behavior |
+
+### Behavior combinators
+
+| Operator | Description |
+|---|---|
+| `mapB(f, b)` | Transform a behavior's value |
+| `liftA2B(f, a, b)` | Combine 2 behaviors |
+| `liftA3B(f, a, b, c)` | Combine 3 behaviors |
+| `liftA4B(f, a, b, c, d)` | Combine 4 behaviors |
+| `liftA5B(f, a, b, c, d, e)` | Combine 5 behaviors |
+| `switchB(bb)` | Monadic join: flatten `Behavior<Behavior<A>>` |
+| `integral(b, dt)` | Numerical integration |
+| `derivative(b, dt)` | Numerical differentiation |
+
+### Event-Behavior bridge
+
+| Operator | Description |
+|---|---|
+| `sample(b, sampler)` | Read behavior on each sampler event |
+| `snapshot(f, b, e)` | Combine behavior value with each event |
+
+All operators are available in three styles:
+
+- **Data-first**: `map(f, event)` — direct composition
+- **Pipeable**: `pipe(event, P.map(f), P.filter(p))` — data-last curried via `P.*`
+- **Fluent**: `fluent(event).map(f).filter(p)` — chainable methods
+
 ## What's Next
 
 - Read the [Denotational Semantics](./semantics.md) for the formal meaning of every operator
-- Explore `@pulse/core` source for advanced combinators: `switchLatest`, `mergeMapConcurrently`, `mapAsync`, `combine`, `zip`
-- See the `integral` combinator for numerical integration of Behaviors
+- See the [Optimizations](../OPTIMIZATIONS.md) doc for performance architecture details
