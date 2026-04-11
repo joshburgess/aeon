@@ -160,9 +160,44 @@ These benchmarks measure **synchronous, in-memory sources** (`fromArray`,
 the entire source chain has `_sync: true` — it has no effect on
 asynchronous event streams (timers, user input, network events, etc.).
 
-For async events, the standard Sink protocol handles all dispatch.
-Performance in async scenarios depends on the Sink chain's method dispatch
-efficiency and the scheduler implementation, which are architecturally
-similar to @most/core. The optimizations documented here are specifically
-targeted at batch-processing workloads where data is already available
-in memory.
+---
+
+## 3. Async / Push Event Performance
+
+**File:** `benchmarks/src/async.bench.ts`
+
+The sync loop compilation path above only helps batch-processing workloads.
+For real-time event processing (DOM events, WebSocket messages, imperative
+push sources), all dispatch goes through the Sink protocol. Pulse's
+monomorphic class design and `declare readonly` field pattern pay off here
+too — V8 maintains stable hidden classes across the entire Sink chain,
+enabling consistent inline caching.
+
+### Results vs RxJS (push-based, 100k events)
+
+| Benchmark | Pulse | RxJS | Speedup |
+|-----------|-------|------|---------|
+| push → filter → map → scan | 0.41ms | 3.79ms | **9.4x** |
+| multicast fan-out (10 subs) | 6.80ms | 19.78ms | **2.9x** |
+| mergeMap (1k × 100 inner) | 0.19ms | 1.01ms | **5.4x** |
+| switchLatest (100 × 1k) | 0.35ms | 0.83ms | **2.4x** |
+| 10 chained maps (push) | 5.30ms | 12.91ms | **2.4x** |
+| take(100) from push | 0.04ms | 0.13ms | **3.7x** |
+| merge 5 push sources | 2.03ms | 3.05ms | **1.5x** |
+
+### Why Pulse is faster in the Sink protocol
+
+1. **Monomorphic Sink classes** — each operator has its own class with
+   `declare readonly` fields. V8 sees a single hidden class per operator
+   type and can inline the `.event()` method call chain.
+
+2. **No intermediate allocations** — Pulse Sink classes hold state directly
+   as fields (e.g., `ScanSink.acc`). RxJS Subscriber instances carry more
+   metadata (teardown logic, closed state, destination chain).
+
+3. **Lighter multicast** — Pulse's `multicast()` uses a bare `Set<Sink>`
+   with a simple for-of loop. No subscription counting, no refCount
+   management, no connectable observable protocol.
+
+4. **Direct disposal** — Pulse disposables are plain objects with a
+   `dispose()` method. No teardown chain, no subscription hierarchy.
