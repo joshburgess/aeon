@@ -5,14 +5,16 @@
  *   pipe(event, P.map(f), P.filter(p), P.take(10))
  */
 
-import type { Behavior, Event, Scheduler } from "@pulse/types";
+import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
 import {
+  integral as integralDirect,
   liftA2B as liftA2BDirect,
   mapB as mapBDirect,
   sample as sampleDirect,
   snapshot as snapshotDirect,
 } from "./behavior.js";
 import { chain as chainDirect } from "./combinators/chain.js";
+import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { combine as combineDirect, zip as zipDirect } from "./combinators/combine.js";
 import { constant as constantDirect } from "./combinators/constant.js";
 import { catchError as catchErrorDirect, mapError as mapErrorDirect } from "./combinators/error.js";
@@ -22,11 +24,13 @@ import { merge as mergeDirect } from "./combinators/merge.js";
 import { mergeMapConcurrently as mergeMapDirect } from "./combinators/mergeMap.js";
 import { scan as scanDirect } from "./combinators/scan.js";
 import {
+  since as sinceDirect,
   skip as skipDirect,
   skipWhile as skipWhileDirect,
   slice as sliceDirect,
   take as takeDirect,
   takeWhile as takeWhileDirect,
+  until as untilDirect,
 } from "./combinators/slice.js";
 import { switchLatest as switchLatestDirect } from "./combinators/switch.js";
 import { tap as tapDirect } from "./combinators/tap.js";
@@ -35,6 +39,13 @@ import {
   observe as observeDirect,
   reduce as reduceDirect,
 } from "./combinators/terminal.js";
+import {
+  bufferCount as bufferCountDirect,
+  bufferTime as bufferTimeDirect,
+  debounce as debounceDirect,
+  delay as delayDirect,
+  throttle as throttleDirect,
+} from "./combinators/time.js";
 
 // --- Event operators ---
 
@@ -108,7 +119,75 @@ export const mapError =
   <A>(event: Event<A, E1>): Event<A, E2> =>
     mapErrorDirect(f, event);
 
+export const mapAsync =
+  <A, B>(f: (a: A) => Promise<B>, concurrency: number) =>
+  <E>(event: Event<A, E>): Event<B, E> =>
+    mapAsyncDirect(f, concurrency, event);
+
+export const switchLatest =
+  <A, E>(event: Event<Event<A, E>, E>): Event<A, E> =>
+    switchLatestDirect(event);
+
+export const until =
+  <E>(signal: Event<unknown, E>) =>
+  <A>(event: Event<A, E>): Event<A, E> =>
+    untilDirect(signal, event);
+
+export const since =
+  <E>(signal: Event<unknown, E>) =>
+  <A>(event: Event<A, E>): Event<A, E> =>
+    sinceDirect(signal, event);
+
+// --- Time operators ---
+
+export const debounce =
+  (duration: Duration) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    debounceDirect(duration, event);
+
+export const throttle =
+  (duration: Duration) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    throttleDirect(duration, event);
+
+export const delay =
+  (duration: Duration) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    delayDirect(duration, event);
+
+export const bufferCount =
+  (count: number) =>
+  <A, E>(event: Event<A, E>): Event<A[], E> =>
+    bufferCountDirect(count, event);
+
+export const bufferTime =
+  (duration: Duration) =>
+  <A, E>(event: Event<A, E>): Event<A[], E> =>
+    bufferTimeDirect(duration, event);
+
+// --- Terminal operators ---
+
+export const reduce =
+  <A, B>(f: (acc: B, a: A) => B, seed: B, scheduler: Scheduler) =>
+  <E>(event: Event<A, E>): Promise<B> =>
+    reduceDirect(f, seed, event, scheduler);
+
+export const observe =
+  <A>(f: (a: A) => void, scheduler: Scheduler) =>
+  <E>(event: Event<A, E>): Promise<void> =>
+    observeDirect(f, event, scheduler);
+
+export const drain =
+  (scheduler: Scheduler) =>
+  <A, E>(event: Event<A, E>): Promise<void> =>
+    drainDirect(event, scheduler);
+
 // --- Behavior operators ---
+
+export const mapB =
+  <A, B>(f: (a: A) => B) =>
+  <E>(behavior: Behavior<A, E>): Behavior<B, E> =>
+    mapBDirect(f, behavior);
 
 export const sample =
   <A, E>(behavior: Behavior<A, E>) =>
@@ -119,3 +198,8 @@ export const snapshot =
   <A, B, C, E>(f: (a: A, b: B) => C, behavior: Behavior<A, E>) =>
   (event: Event<B, E>): Event<C, E> =>
     snapshotDirect(f, behavior, event);
+
+export const integral =
+  (dt: Duration) =>
+  (behavior: Behavior<number, never>): Behavior<number, never> =>
+    integralDirect(behavior, dt);

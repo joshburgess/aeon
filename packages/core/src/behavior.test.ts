@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   constantB,
   fromFunction,
+  integral,
   liftA2B,
   liftA3B,
   mapB,
@@ -384,5 +385,50 @@ describe("switcher", () => {
     expect(readBehavior(b, toTime(30))).toBe(60);
 
     d.dispose();
+  });
+});
+
+describe("integral", () => {
+  it("integral of constant(1) approximates t => t", () => {
+    const dt = toDuration(1);
+    const b = integral(constantB(1), dt);
+    // ∫₀ᵗ 1 ds = t
+    expect(readBehavior(b, toTime(0))).toBe(0);
+    expect(readBehavior(b, toTime(10))).toBeCloseTo(10, 5);
+    expect(readBehavior(b, toTime(100))).toBeCloseTo(100, 5);
+  });
+
+  it("integral of constant(c) approximates t => c*t", () => {
+    const dt = toDuration(1);
+    const b = integral(constantB(5), dt);
+    expect(readBehavior(b, toTime(10))).toBeCloseTo(50, 5);
+  });
+
+  it("integral of t => t approximates t => t²/2", () => {
+    const dt = toDuration(0.1);
+    const b = integral(
+      fromFunction((t: Time) => t as number),
+      dt,
+    );
+    // ∫₀¹⁰ s ds = 50
+    expect(readBehavior(b, toTime(10))).toBeCloseTo(50, 1);
+    // ∫₀¹⁰⁰ s ds = 5000
+    expect(readBehavior(b, toTime(100))).toBeCloseTo(5000, 0);
+  });
+
+  it("integral at time 0 is 0", () => {
+    const dt = toDuration(1);
+    const b = integral(
+      fromFunction((t: Time) => (t as number) * (t as number)),
+      dt,
+    );
+    expect(readBehavior(b, toTime(0))).toBe(0);
+  });
+
+  it("handles partial final step correctly", () => {
+    const dt = toDuration(3);
+    // ∫₀¹⁰ 1 ds = 10, with dt=3 we get steps at 0,3,6,9 and a partial step from 9 to 10
+    const b = integral(constantB(1), dt);
+    expect(readBehavior(b, toTime(10))).toBeCloseTo(10, 5);
   });
 });

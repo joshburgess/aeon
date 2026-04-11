@@ -6,7 +6,7 @@
  * operations, and bridged with Events via stepper/sample/snapshot.
  */
 
-import type { Behavior, Disposable, Event, Scheduler, Sink, Time } from "@pulse/types";
+import type { Behavior, Disposable, Duration, Event, Scheduler, Sink, Time } from "@pulse/types";
 import {
   type BehaviorImpl,
   _createBehavior,
@@ -241,6 +241,49 @@ export const switcher = <A, E>(
   );
 
   return [_createBehavior<A, E>(impl), disposable];
+};
+
+// --- Integration ---
+
+/**
+ * Numerical integration of a Behavior over time.
+ *
+ * Denotation: `integral(b, dt) ≈ t => ∫₀ᵗ b(s) ds`
+ *
+ * Uses the trapezoidal rule with step size `dt`. The consumer's sampling
+ * rate and the integration step size are decoupled — the integrator
+ * subdivides [0, t] into steps of size `dt` regardless of when sampling
+ * occurs.
+ */
+export const integral = (
+  behavior: Behavior<number, never>,
+  dt: Duration,
+): Behavior<number, never> => {
+  const step = dt as number;
+  return fromFunction((t: Time) => {
+    const end = t as number;
+    if (end <= 0) return 0;
+
+    let acc = 0;
+    let prev = sampleBehavior(behavior, 0 as Time) as number;
+    let s = 0;
+
+    while (s + step < end) {
+      s += step;
+      const curr = sampleBehavior(behavior, s as Time) as number;
+      acc += (prev + curr) * 0.5 * step;
+      prev = curr;
+    }
+
+    // Final partial step
+    if (s < end) {
+      const remaining = end - s;
+      const curr = sampleBehavior(behavior, end as Time) as number;
+      acc += (prev + curr) * 0.5 * remaining;
+    }
+
+    return acc;
+  });
 };
 
 /**

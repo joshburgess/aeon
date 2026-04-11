@@ -9,7 +9,7 @@
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
 import { _EmptySource, _EMPTY_SOURCE } from "../constructors.js";
-import { SettableDisposable, disposeNone } from "../internal/dispose.js";
+import { SettableDisposable, disposeAll, disposeNone } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 import { Pipe } from "../internal/Pipe.js";
 
@@ -260,3 +260,145 @@ export const skipWhile = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>
  */
 export const slice = <A, E>(start: number, end: number, event: Event<A, E>): Event<A, E> =>
   take(end - start, skip(start, event));
+
+// --- until ---
+
+class UntilSink<A, E> extends Pipe<A, E> {
+  declare readonly disposable: SettableDisposable;
+  declare active: boolean;
+
+  constructor(sink: Sink<A, E>, disposable: SettableDisposable) {
+    super(sink);
+    this.disposable = disposable;
+    this.active = true;
+  }
+
+  event(time: Time, value: A): void {
+    if (this.active) {
+      this.sink.event(time, value);
+    }
+  }
+}
+
+class UntilSignalSink<A, E> {
+  declare readonly mainSink: UntilSink<A, E>;
+  declare readonly disposable: SettableDisposable;
+
+  constructor(mainSink: UntilSink<A, E>, disposable: SettableDisposable) {
+    this.mainSink = mainSink;
+    this.disposable = disposable;
+  }
+
+  event(time: Time, _value: unknown): void {
+    if (this.mainSink.active) {
+      this.mainSink.active = false;
+      this.disposable.dispose();
+      this.mainSink.sink.end(time);
+    }
+  }
+
+  error(time: Time, err: E): void {
+    this.mainSink.sink.error(time, err);
+  }
+
+  end(_time: Time): void {
+    // Signal ending without firing means: keep going until main ends naturally
+  }
+}
+
+class UntilSource<A, E> implements Source<A, E> {
+  declare readonly signal: Source<unknown, E>;
+  declare readonly source: Source<A, E>;
+
+  constructor(signal: Source<unknown, E>, source: Source<A, E>) {
+    this.signal = signal;
+    this.source = source;
+  }
+
+  run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
+    const sd = new SettableDisposable();
+    const mainSink = new UntilSink<A, E>(sink, sd);
+    const signalDisposable = this.signal.run(
+      new UntilSignalSink<A, E>(mainSink, sd) as unknown as Sink<unknown, E>,
+      scheduler,
+    );
+    const mainDisposable = this.source.run(mainSink, scheduler);
+    sd.set(disposeAll([mainDisposable, signalDisposable]));
+    return sd;
+  }
+}
+
+/**
+ * Take values from the event until the signal fires, then end.
+ *
+ * Denotation: `until(signal, e) = [(t, v) | (t, v) ∈ e, t < t_signal]`
+ * where `t_signal` is the time of the first occurrence in `signal`.
+ */
+export const until = <A, E>(signal: Event<unknown, E>, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new UntilSource(_getSource(signal), _getSource(event)));
+
+// --- since ---
+
+class SinceSink<A, E> extends Pipe<A, E> {
+  declare open: boolean;
+
+  constructor(sink: Sink<A, E>) {
+    super(sink);
+    this.open = false;
+  }
+
+  event(time: Time, value: A): void {
+    if (this.open) {
+      this.sink.event(time, value);
+    }
+  }
+}
+
+class SinceSignalSink<A, E> {
+  declare readonly mainSink: SinceSink<A, E>;
+
+  constructor(mainSink: SinceSink<A, E>) {
+    this.mainSink = mainSink;
+  }
+
+  event(_time: Time, _value: unknown): void {
+    this.mainSink.open = true;
+  }
+
+  error(time: Time, err: E): void {
+    this.mainSink.sink.error(time, err);
+  }
+
+  end(_time: Time): void {
+    // Signal ending without firing means: never open
+  }
+}
+
+class SinceSource<A, E> implements Source<A, E> {
+  declare readonly signal: Source<unknown, E>;
+  declare readonly source: Source<A, E>;
+
+  constructor(signal: Source<unknown, E>, source: Source<A, E>) {
+    this.signal = signal;
+    this.source = source;
+  }
+
+  run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
+    const mainSink = new SinceSink<A, E>(sink);
+    const signalDisposable = this.signal.run(
+      new SinceSignalSink<A, E>(mainSink) as unknown as Sink<unknown, E>,
+      scheduler,
+    );
+    const mainDisposable = this.source.run(mainSink, scheduler);
+    return disposeAll([mainDisposable, signalDisposable]);
+  }
+}
+
+/**
+ * Skip values from the event until the signal fires, then pass through the rest.
+ *
+ * Denotation: `since(signal, e) = [(t, v) | (t, v) ∈ e, t >= t_signal]`
+ * where `t_signal` is the time of the first occurrence in `signal`.
+ */
+export const since = <A, E>(signal: Event<unknown, E>, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new SinceSource(_getSource(signal), _getSource(event)));

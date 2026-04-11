@@ -21,6 +21,8 @@ export {
   takeWhile,
   skipWhile,
   slice,
+  until,
+  since,
   merge,
   combine,
   zip,
@@ -35,6 +37,7 @@ export {
   delay,
   bufferCount,
   bufferTime,
+  mapAsync,
 } from "./combinators/index.js";
 
 // Behavior constructors and combinators
@@ -50,6 +53,7 @@ export {
   sample,
   snapshot,
   switcher,
+  integral,
   readBehavior,
 } from "./behavior.js";
 

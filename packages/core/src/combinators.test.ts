@@ -7,14 +7,15 @@ import { catchError, mapError, throwError } from "./combinators/error.js";
 import { filter } from "./combinators/filter.js";
 import { map } from "./combinators/map.js";
 import { merge } from "./combinators/merge.js";
+import { mapAsync } from "./combinators/mapAsync.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
 import { scan } from "./combinators/scan.js";
-import { skip, skipWhile, slice, take, takeWhile } from "./combinators/slice.js";
+import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { empty, fromArray, never, now } from "./constructors.js";
-import { _getSource } from "./internal/event.js";
+import { _createEvent, _getSource } from "./internal/event.js";
 import { TestScheduler } from "./internal/testScheduler.js";
 
 /** Helper: collect all values from a synchronous event. */
@@ -209,6 +210,167 @@ describe("slice", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(slice(1, 4, fromArray([1, 2, 3, 4, 5])), scheduler);
     expect(result).toEqual([2, 3, 4]);
+  });
+});
+
+describe("until", () => {
+  it("takes values until the signal fires", () => {
+    const scheduler = new TestScheduler();
+    let pushMain: ((t: Time, v: number) => void) | undefined;
+    let endMain: ((t: Time) => void) | undefined;
+    let pushSignal: ((t: Time) => void) | undefined;
+    const main = _createEvent<number, never>({
+      run(sink) {
+        pushMain = (t, v) => sink.event(t, v);
+        endMain = (t) => sink.end(t);
+        return { dispose() { pushMain = undefined; } };
+      },
+    });
+    const signal = _createEvent<unknown, never>({
+      run(sink) {
+        pushSignal = (t) => sink.event(t, undefined);
+        return { dispose() { pushSignal = undefined; } };
+      },
+    });
+
+    const values: number[] = [];
+    let ended = false;
+    _getSource(until(signal, main)).run(
+      {
+        event(_t: Time, v: number) { values.push(v); },
+        error() {},
+        end() { ended = true; },
+      },
+      scheduler,
+    );
+
+    pushMain?.(toTime(0), 1);
+    pushMain?.(toTime(1), 2);
+    expect(values).toEqual([1, 2]);
+    expect(ended).toBe(false);
+
+    // Signal fires — stream should end
+    pushSignal?.(toTime(2));
+    expect(ended).toBe(true);
+
+    // Values after signal should be ignored
+    pushMain?.(toTime(3), 3);
+    expect(values).toEqual([1, 2]);
+  });
+
+  it("passes through all values if signal never fires", () => {
+    const scheduler = new TestScheduler();
+    let pushMain: ((t: Time, v: number) => void) | undefined;
+    let endMain: ((t: Time) => void) | undefined;
+    const main = _createEvent<number, never>({
+      run(sink) {
+        pushMain = (t, v) => sink.event(t, v);
+        endMain = (t) => sink.end(t);
+        return { dispose() { pushMain = undefined; } };
+      },
+    });
+    const signal = _createEvent<unknown, never>({
+      run() {
+        return { dispose() {} };
+      },
+    });
+
+    const values: number[] = [];
+    let ended = false;
+    _getSource(until(signal, main)).run(
+      {
+        event(_t: Time, v: number) { values.push(v); },
+        error() {},
+        end() { ended = true; },
+      },
+      scheduler,
+    );
+
+    pushMain?.(toTime(0), 1);
+    pushMain?.(toTime(1), 2);
+    endMain?.(toTime(2));
+    expect(values).toEqual([1, 2]);
+    expect(ended).toBe(true);
+  });
+});
+
+describe("since", () => {
+  it("skips values until the signal fires, then passes through", () => {
+    const scheduler = new TestScheduler();
+    let pushMain: ((t: Time, v: number) => void) | undefined;
+    let endMain: ((t: Time) => void) | undefined;
+    let pushSignal: ((t: Time) => void) | undefined;
+    const main = _createEvent<number, never>({
+      run(sink) {
+        pushMain = (t, v) => sink.event(t, v);
+        endMain = (t) => sink.end(t);
+        return { dispose() { pushMain = undefined; } };
+      },
+    });
+    const signal = _createEvent<unknown, never>({
+      run(sink) {
+        pushSignal = (t) => sink.event(t, undefined);
+        return { dispose() { pushSignal = undefined; } };
+      },
+    });
+
+    const values: number[] = [];
+    let ended = false;
+    _getSource(since(signal, main)).run(
+      {
+        event(_t: Time, v: number) { values.push(v); },
+        error() {},
+        end() { ended = true; },
+      },
+      scheduler,
+    );
+
+    pushMain?.(toTime(0), 1);
+    pushMain?.(toTime(1), 2);
+    expect(values).toEqual([]);
+
+    // Signal fires — start passing through
+    pushSignal?.(toTime(2));
+
+    pushMain?.(toTime(3), 3);
+    pushMain?.(toTime(4), 4);
+    expect(values).toEqual([3, 4]);
+
+    endMain?.(toTime(5));
+    expect(ended).toBe(true);
+  });
+
+  it("passes all values if signal fires immediately", () => {
+    const scheduler = new TestScheduler();
+    let pushMain: ((t: Time, v: number) => void) | undefined;
+    let pushSignal: ((t: Time) => void) | undefined;
+    const main = _createEvent<number, never>({
+      run(sink) {
+        pushMain = (t, v) => sink.event(t, v);
+        return { dispose() { pushMain = undefined; } };
+      },
+    });
+    const signal = _createEvent<unknown, never>({
+      run(sink) {
+        pushSignal = (t) => sink.event(t, undefined);
+        return { dispose() { pushSignal = undefined; } };
+      },
+    });
+
+    const values: number[] = [];
+    _getSource(since(signal, main)).run(
+      {
+        event(_t: Time, v: number) { values.push(v); },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+
+    pushSignal?.(toTime(0));
+    pushMain?.(toTime(1), 10);
+    pushMain?.(toTime(2), 20);
+    expect(values).toEqual([10, 20]);
   });
 });
 
@@ -423,5 +585,108 @@ describe("filter -> map -> reduce pipeline", () => {
       .map((x) => x * 2)
       .reduce((a, b) => a + b, 0);
     expect(result).toBe(expected);
+  });
+});
+
+describe("mapAsync", () => {
+  it("applies an async function to each value", async () => {
+    const scheduler = new TestScheduler();
+    const event = fromArray([1, 2, 3]);
+    const result: number[] = [];
+
+    const mapped = mapAsync(
+      async (x: number) => x * 10,
+      Infinity,
+      event,
+    );
+
+    await new Promise<void>((resolve) => {
+      _getSource(mapped).run(
+        {
+          event(_t: Time, v: number) { result.push(v); },
+          error() {},
+          end() { resolve(); },
+        },
+        scheduler,
+      );
+    });
+
+    expect(result.sort((a, b) => a - b)).toEqual([10, 20, 30]);
+  });
+
+  it("respects concurrency limit", async () => {
+    const scheduler = new TestScheduler();
+    let concurrent = 0;
+    let maxConcurrent = 0;
+    const resolvers: Array<(v: number) => void> = [];
+
+    const event = fromArray([1, 2, 3, 4]);
+    const mapped = mapAsync(
+      (x: number) =>
+        new Promise<number>((resolve) => {
+          concurrent++;
+          maxConcurrent = Math.max(maxConcurrent, concurrent);
+          resolvers.push((v) => {
+            concurrent--;
+            resolve(v);
+          });
+        }),
+      2,
+      event,
+    );
+
+    const result: number[] = [];
+    const done = new Promise<void>((resolve) => {
+      _getSource(mapped).run(
+        {
+          event(_t: Time, v: number) { result.push(v); },
+          error() {},
+          end() { resolve(); },
+        },
+        scheduler,
+      );
+    });
+
+    // 2 started, 2 buffered
+    await Promise.resolve(); // let microtasks settle
+    expect(maxConcurrent).toBe(2);
+
+    // Resolve first two
+    resolvers[0]!(10);
+    resolvers[1]!(20);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // Resolve remaining
+    resolvers[2]!(30);
+    resolvers[3]!(40);
+    await done;
+
+    expect(result.sort((a, b) => a - b)).toEqual([10, 20, 30, 40]);
+    expect(maxConcurrent).toBe(2);
+  });
+
+  it("propagates async errors", async () => {
+    const scheduler = new TestScheduler();
+    const event = fromArray([1]);
+    const mapped = mapAsync(
+      async (_x: number) => { throw new Error("boom"); },
+      1,
+      event,
+    );
+
+    const error = await new Promise<unknown>((resolve) => {
+      _getSource(mapped).run(
+        {
+          event() {},
+          error(_t: Time, err: unknown) { resolve(err); },
+          end() {},
+        },
+        scheduler,
+      );
+    });
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("boom");
   });
 });
