@@ -22,7 +22,9 @@ import { map as mapDirect } from "./combinators/map.js";
 import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { merge as mergeDirect } from "./combinators/merge.js";
 import { mergeMapConcurrently as mergeMapDirect } from "./combinators/mergeMap.js";
+import { retry as retryDirect } from "./combinators/retry.js";
 import { scan as scanDirect } from "./combinators/scan.js";
+import { share as shareDirect } from "./combinators/share.js";
 import {
   since as sinceDirect,
   skip as skipDirect,
@@ -46,6 +48,7 @@ import {
   delay as delayDirect,
   throttle as throttleDirect,
 } from "./combinators/time.js";
+import { withLatestFrom as withLatestFromDirect } from "./combinators/withLatestFrom.js";
 
 // --- Event operators ---
 
@@ -126,6 +129,21 @@ export const mapAsync =
 
 export const switchLatest = <A, E>(event: Event<Event<A, E>, E>): Event<A, E> =>
   switchLatestDirect(event);
+
+export const retry =
+  (maxRetries: number, delay?: Duration) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    retryDirect(maxRetries, event, delay);
+
+export const share =
+  (bufferSize: number) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    shareDirect(bufferSize, event);
+
+export const withLatestFrom =
+  <A, B, C, E>(f: (a: A, b: B) => C, sampled: Event<A, E>) =>
+  (sampler: Event<B, E>): Event<C, E> =>
+    withLatestFromDirect(f, sampled, sampler);
 
 export const until =
   <E>(signal: Event<unknown, E>) =>

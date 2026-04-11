@@ -13,3 +13,7 @@ export { catchError, mapError, throwError } from "./error.js";
 export { chain } from "./chain.js";
 export { debounce, throttle, delay, bufferCount, bufferTime } from "./time.js";
 export { mapAsync } from "./mapAsync.js";
+export { fromPromise } from "./fromPromise.js";
+export { retry } from "./retry.js";
+export { share } from "./share.js";
+export { withLatestFrom } from "./withLatestFrom.js";

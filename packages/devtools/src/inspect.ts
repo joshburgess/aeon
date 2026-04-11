@@ -113,6 +113,10 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     DOMEventSource: "fromDOMEvent",
     AnimationFrameSource: "animationFrames",
     MarbleSource: "testEvent",
+    FromPromiseSource: "fromPromise",
+    RetrySource: "retry",
+    ShareSource: "share",
+    WithLatestFromSource: "withLatestFrom",
   };
 
   if (ctorName in nameMap) {

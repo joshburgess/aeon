@@ -5,15 +5,19 @@ import { combine, zip } from "./combinators/combine.js";
 import { constant } from "./combinators/constant.js";
 import { catchError, mapError, throwError } from "./combinators/error.js";
 import { filter } from "./combinators/filter.js";
+import { fromPromise } from "./combinators/fromPromise.js";
 import { map } from "./combinators/map.js";
 import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
+import { share } from "./combinators/share.js";
 import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
+import { withLatestFrom } from "./combinators/withLatestFrom.js";
 import { empty, fromArray, never, now } from "./constructors.js";
 import { _createEvent, _getSource } from "./internal/event.js";
 import { TestScheduler } from "./internal/testScheduler.js";
@@ -738,5 +742,290 @@ describe("mapAsync", () => {
 
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toBe("boom");
+  });
+});
+
+describe("fromPromise", () => {
+  it("emits the resolved value", async () => {
+    const scheduler = new TestScheduler();
+    const event = fromPromise(Promise.resolve(42));
+
+    const result = await new Promise<number>((resolve) => {
+      _getSource(event).run(
+        {
+          event(_t: Time, v: number) {
+            resolve(v);
+          },
+          error() {},
+          end() {},
+        },
+        scheduler,
+      );
+    });
+
+    expect(result).toBe(42);
+  });
+
+  it("errors on rejection", async () => {
+    const scheduler = new TestScheduler();
+    const event = fromPromise(Promise.reject(new Error("fail")));
+
+    const error = await new Promise<unknown>((resolve) => {
+      _getSource(event).run(
+        {
+          event() {},
+          error(_t: Time, err: unknown) {
+            resolve(err);
+          },
+          end() {},
+        },
+        scheduler,
+      );
+    });
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("fail");
+  });
+
+  it("does not emit after dispose", async () => {
+    const scheduler = new TestScheduler();
+    let emitted = false;
+
+    const p = new Promise<number>((resolve) => {
+      setTimeout(() => resolve(42), 10);
+    });
+
+    const disposable = _getSource(fromPromise(p)).run(
+      {
+        event() {
+          emitted = true;
+        },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+
+    disposable.dispose();
+    await p.catch(() => {});
+    await new Promise((r) => setTimeout(r, 20));
+    expect(emitted).toBe(false);
+  });
+});
+
+describe("retry", () => {
+  it("retries on error up to maxRetries", () => {
+    const scheduler = new TestScheduler();
+    let attempts = 0;
+
+    const failing = _createEvent<number, string>({
+      run(sink, sched) {
+        attempts++;
+        if (attempts < 3) {
+          sink.error(sched.currentTime(), "fail");
+        } else {
+          const t = sched.currentTime();
+          sink.event(t, 42);
+          sink.end(t);
+        }
+        return { dispose() {} };
+      },
+    });
+
+    const values: number[] = [];
+    let ended = false;
+    _getSource(retry(5, failing)).run(
+      {
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
+        error() {},
+        end() {
+          ended = true;
+        },
+      },
+      scheduler,
+    );
+
+    expect(attempts).toBe(3);
+    expect(values).toEqual([42]);
+    expect(ended).toBe(true);
+  });
+
+  it("propagates error after exhausting retries", () => {
+    const scheduler = new TestScheduler();
+    const failing = throwError<number, string>("boom");
+
+    const errors: string[] = [];
+    _getSource(retry(2, failing)).run(
+      {
+        event() {},
+        error(_t: Time, err: string) {
+          errors.push(err);
+        },
+        end() {},
+      },
+      scheduler,
+    );
+
+    expect(errors).toEqual(["boom"]);
+  });
+});
+
+describe("share", () => {
+  it("replays buffered values to late subscribers", () => {
+    const scheduler = new TestScheduler();
+    const source = fromArray([1, 2, 3]);
+    const shared = share(2, source);
+
+    // First subscriber gets all values
+    const values1: number[] = [];
+    _getSource(shared).run(
+      {
+        event(_t: Time, v: number) {
+          values1.push(v);
+        },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+    expect(values1).toEqual([1, 2, 3]);
+  });
+
+  it("share(0) works like multicast (no replay)", () => {
+    const scheduler = new TestScheduler();
+    let subscriptions = 0;
+
+    const source = _createEvent<number, never>({
+      run(sink, sched) {
+        subscriptions++;
+        const t = sched.currentTime();
+        sink.event(t, 1);
+        sink.event(t, 2);
+        sink.end(t);
+        return { dispose() {} };
+      },
+    });
+
+    const shared = share(0, source);
+
+    const values1: number[] = [];
+    _getSource(shared).run(
+      {
+        event(_t: Time, v: number) {
+          values1.push(v);
+        },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+
+    expect(values1).toEqual([1, 2]);
+    expect(subscriptions).toBe(1);
+  });
+});
+
+describe("withLatestFrom", () => {
+  it("combines latest value from sampled with each sampler emission", () => {
+    const scheduler = new TestScheduler();
+    // sampled emits 10, 20; sampler emits "a", "b"
+    // After sampled=10, sampled=20, sampler="a" → f(20, "a"), sampler="b" → f(20, "b")
+    let pushSampled: ((t: Time, v: number) => void) | undefined;
+    let pushSampler: ((t: Time, v: string) => void) | undefined;
+    let endSampler: ((t: Time) => void) | undefined;
+
+    const sampled = _createEvent<number, never>({
+      run(sink) {
+        pushSampled = (t, v) => sink.event(t, v);
+        return { dispose() {} };
+      },
+    });
+
+    const sampler = _createEvent<string, never>({
+      run(sink) {
+        pushSampler = (t, v) => sink.event(t, v);
+        endSampler = (t) => sink.end(t);
+        return { dispose() {} };
+      },
+    });
+
+    const values: string[] = [];
+    let ended = false;
+    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+      {
+        event(_t: Time, v: string) {
+          values.push(v);
+        },
+        error() {},
+        end() {
+          ended = true;
+        },
+      },
+      scheduler,
+    );
+
+    // Sampler fires before sampled has a value — should not emit
+    pushSampler?.(toTime(0), "x");
+    expect(values).toEqual([]);
+
+    // Sampled gets a value
+    pushSampled?.(toTime(1), 10);
+
+    // Now sampler fires — should emit
+    pushSampler?.(toTime(2), "a");
+    expect(values).toEqual(["10-a"]);
+
+    // Update sampled, then sample again
+    pushSampled?.(toTime(3), 20);
+    pushSampler?.(toTime(4), "b");
+    expect(values).toEqual(["10-a", "20-b"]);
+
+    // End when sampler ends
+    endSampler?.(toTime(5));
+    expect(ended).toBe(true);
+  });
+
+  it("does not emit until sampled has a value", () => {
+    const scheduler = new TestScheduler();
+    const sampled = never<number>();
+    const sampler = fromArray(["a", "b", "c"]);
+
+    const values: unknown[] = [];
+    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+      {
+        event(_t: Time, v: unknown) {
+          values.push(v);
+        },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+
+    expect(values).toEqual([]);
+  });
+
+  it("works with synchronous sources", () => {
+    const scheduler = new TestScheduler();
+    const sampled = fromArray([10, 20, 30]);
+    const sampler = fromArray(["a", "b"]);
+
+    const values: string[] = [];
+    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+      {
+        event(_t: Time, v: string) {
+          values.push(v);
+        },
+        error() {},
+        end() {},
+      },
+      scheduler,
+    );
+
+    // sampled emits 10, 20, 30 → latestA=30
+    // sampler emits "a" → "30-a", "b" → "30-b"
+    expect(values).toEqual(["30-a", "30-b"]);
   });
 });

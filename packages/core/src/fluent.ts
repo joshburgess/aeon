@@ -19,12 +19,15 @@ import { map } from "./combinators/map.js";
 import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
+import { share } from "./combinators/share.js";
 import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { bufferCount, bufferTime, debounce, delay, throttle } from "./combinators/time.js";
+import { withLatestFrom } from "./combinators/withLatestFrom.js";
 import { multicast } from "./multicast.js";
 
 /**
@@ -162,10 +165,22 @@ export class FluentEvent<A, E> {
     return new FluentEvent(snapshot(f, behavior, this.event));
   }
 
+  retry(maxRetries: number, delayDuration?: Duration): FluentEvent<A, E> {
+    return new FluentEvent(retry(maxRetries, this.event, delayDuration));
+  }
+
+  withLatestFrom<B, C>(f: (a: A, b: B) => C, sampler: Event<B, E>): FluentEvent<C, E> {
+    return new FluentEvent(withLatestFrom(f, this.event, sampler));
+  }
+
   // --- Utilities ---
 
   multicast(): FluentEvent<A, E> {
     return new FluentEvent(multicast(this.event));
+  }
+
+  share(bufferSize: number): FluentEvent<A, E> {
+    return new FluentEvent(share(bufferSize, this.event));
   }
 
   toAsyncIterator(scheduler: Scheduler): AsyncIterableIterator<A> & { dispose(): void } {

@@ -38,6 +38,10 @@ export {
   bufferCount,
   bufferTime,
   mapAsync,
+  fromPromise,
+  retry,
+  share,
+  withLatestFrom,
 } from "./combinators/index.js";
 
 // Behavior constructors and combinators
