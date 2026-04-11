@@ -20,6 +20,7 @@ export const createAdapter = <A, E = never>(): [push: (value: A) => void, event:
   const sinks = new Set<{ sink: Sink<A, E>; scheduler: Scheduler }>();
 
   const push = (value: A): void => {
+    if (sinks.size === 0) return;
     for (const { sink, scheduler } of sinks) {
       sink.event(scheduler.currentTime(), value);
     }

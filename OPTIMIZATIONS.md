@@ -177,20 +177,16 @@ enabling consistent inline caching.
 
 | Benchmark | Pulse | @most/core | RxJS | vs @most | vs RxJS |
 |-----------|-------|-----------|------|----------|---------|
-| push → filter → map → scan | 0.38ms | 1.70ms | 3.65ms | **4.4x** | **9.5x** |
-| multicast fan-out (10 subs) | 6.83ms | 7.22ms | 18.19ms | **1.06x** | **2.7x** |
-| mergeMap (1k × 100 inner) | 0.18ms | 0.53ms | 0.92ms | **2.9x** | **5.1x** |
-| switchLatest (100 × 1k) | 0.37ms | N/A¹ | 0.81ms | — | **2.2x** |
-| 10 chained maps (push) | 5.20ms | 5.39ms | 12.31ms | **1.04x** | **2.4x** |
-| take(100) from push | 0.035ms | 0.025ms | 0.128ms | 0.71x² | **3.7x** |
-| merge 5 push sources | 1.98ms | 2.30ms | 2.97ms | **1.16x** | **1.5x** |
+| push → filter → map → scan | 0.40ms | 1.85ms | 3.67ms | **4.6x** | **9.1x** |
+| multicast fan-out (10 subs) | 6.69ms | 7.15ms | 19.43ms | **1.07x** | **2.9x** |
+| mergeMap (1k × 100 inner) | 0.19ms | 0.59ms | 0.93ms | **3.2x** | **5.0x** |
+| switchLatest (100 × 1k) | 0.34ms | N/A¹ | 0.82ms | — | **2.4x** |
+| 10 chained maps (push) | 5.50ms | 5.50ms | 12.97ms | **1.0x** | **2.4x** |
+| take(100) from push | 0.010ms | 0.025ms | 0.129ms | **2.5x** | **12.8x** |
+| merge 5 push sources | 1.80ms | 2.34ms | 2.92ms | **1.3x** | **1.6x** |
 
 ¹ @most/core's `switchLatest` does not handle synchronous re-entrant switch
 (all inner streams emitting synchronously within a single outer emission).
-
-² @most/core's multicast adapter is slightly lighter for the take(100) micro-
-benchmark because its `newStream`+`mostMulticast` wrapper has less per-sink
-overhead than Pulse's `createAdapter`. Pulse still beats RxJS by 3.7x.
 
 ### Why Pulse is faster in the Sink protocol
 
