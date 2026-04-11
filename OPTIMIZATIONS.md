@@ -136,7 +136,7 @@ The sync path wins specifically for:
 - **Leaf-direct terminals** (reduce(f, seed, fromArray(arr))) where the
   entire computation is a single tight loop
 
-### Results vs @most/core (1M integers)
+### Results vs @most/core (synchronous sources, 1M integers)
 
 | Benchmark | Pulse | @most | Speedup |
 |-----------|-------|-------|---------|
@@ -152,3 +152,17 @@ The sync path wins specifically for:
 The take(100) result is the standout: @most iterates all 1M values through
 a TakeSink that returns early on each call, while Pulse's syncIterate
 stops the source loop after exactly 100 values.
+
+### Scope and limitations
+
+These benchmarks measure **synchronous, in-memory sources** (`fromArray`,
+`fromIterable`, `now`). The sync loop compilation path only activates when
+the entire source chain has `_sync: true` — it has no effect on
+asynchronous event streams (timers, user input, network events, etc.).
+
+For async events, the standard Sink protocol handles all dispatch.
+Performance in async scenarios depends on the Sink chain's method dispatch
+efficiency and the scheduler implementation, which are architecturally
+similar to @most/core. The optimizations documented here are specifically
+targeted at batch-processing workloads where data is already available
+in memory.
