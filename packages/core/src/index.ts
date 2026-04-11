@@ -57,6 +57,9 @@ export {
   readBehavior,
 } from "./behavior.js";
 
+// Fluent API
+export { fluent, FluentEvent } from "./fluent.js";
+
 // Pipe utility
 export { pipe } from "./pipe.js";
 
