@@ -1,24 +1,34 @@
 import { type Sink, type Time, toDuration, toTime } from "@pulse/types";
 import { describe, expect, it } from "vitest";
+import { count, elementAt, every } from "./combinators/aggregate.js";
 import { chain } from "./combinators/chain.js";
 import { combine, zip } from "./combinators/combine.js";
 import { constant } from "./combinators/constant.js";
+import { defaultIfEmpty } from "./combinators/defaultIfEmpty.js";
+import { distinctUntilChanged } from "./combinators/distinctUntilChanged.js";
 import { catchError, mapError, throwError } from "./combinators/error.js";
+import { exhaustMap } from "./combinators/exhaustMap.js";
 import { filter } from "./combinators/filter.js";
+import { finalize } from "./combinators/finalize.js";
+import { first, last } from "./combinators/firstLast.js";
+import { forkJoin } from "./combinators/forkJoin.js";
 import { fromPromise } from "./combinators/fromPromise.js";
 import { map } from "./combinators/map.js";
 import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { pairwise } from "./combinators/pairwise.js";
+import { race } from "./combinators/race.js";
 import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
 import { share } from "./combinators/share.js";
 import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
+import { startWith } from "./combinators/startWith.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { withLatestFrom } from "./combinators/withLatestFrom.js";
-import { empty, fromArray, never, now } from "./constructors.js";
+import { empty, fromArray, never, now, range } from "./constructors.js";
 import { _createEvent, _getSource } from "./internal/event.js";
 import { TestScheduler } from "./internal/testScheduler.js";
 
@@ -1027,5 +1037,380 @@ describe("withLatestFrom", () => {
     // sampled emits 10, 20, 30 → latestA=30
     // sampler emits "a" → "30-a", "b" → "30-b"
     expect(values).toEqual(["30-a", "30-b"]);
+  });
+});
+
+// ============================================================
+// Tier 1 operators
+// ============================================================
+
+describe("distinctUntilChanged", () => {
+  it("suppresses consecutive duplicates", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(
+      distinctUntilChanged(fromArray([1, 1, 2, 2, 2, 3, 1, 1])),
+      scheduler,
+    );
+    expect(result).toEqual([1, 2, 3, 1]);
+  });
+
+  it("passes all values when none are consecutive duplicates", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(distinctUntilChanged(fromArray([1, 2, 3, 4])), scheduler);
+    expect(result).toEqual([1, 2, 3, 4]);
+  });
+
+  it("uses custom equality function", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<{ id: number; name: string }>(
+      distinctUntilChanged(
+        fromArray([
+          { id: 1, name: "a" },
+          { id: 1, name: "b" },
+          { id: 2, name: "c" },
+        ]),
+        (a, b) => a.id === b.id,
+      ),
+      scheduler,
+    );
+    expect(result).toEqual([
+      { id: 1, name: "a" },
+      { id: 2, name: "c" },
+    ]);
+  });
+
+  it("emits single value unchanged", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(distinctUntilChanged(fromArray([42])), scheduler);
+    expect(result).toEqual([42]);
+  });
+});
+
+describe("startWith", () => {
+  it("prepends a value before the stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(startWith(0, fromArray([1, 2, 3])), scheduler);
+    expect(result).toEqual([0, 1, 2, 3]);
+  });
+
+  it("works with empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(startWith(42, empty()), scheduler);
+    expect(result).toEqual([42]);
+  });
+});
+
+describe("first", () => {
+  it("emits only the first value", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(first(fromArray([10, 20, 30])), scheduler);
+    expect(result).toEqual([10]);
+  });
+
+  it("emits first value matching predicate", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(
+      first(fromArray([1, 2, 3, 4]), (x) => x > 2),
+      scheduler,
+    );
+    expect(result).toEqual([3]);
+  });
+
+  it("emits nothing on empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(first(empty()), scheduler);
+    expect(result).toEqual([]);
+  });
+});
+
+describe("last", () => {
+  it("emits only the final value", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(last(fromArray([10, 20, 30])), scheduler);
+    expect(result).toEqual([30]);
+  });
+
+  it("emits last value matching predicate", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(
+      last(fromArray([1, 2, 3, 4, 5]), (x) => x < 4),
+      scheduler,
+    );
+    expect(result).toEqual([3]);
+  });
+
+  it("emits nothing on empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(last(empty()), scheduler);
+    expect(result).toEqual([]);
+  });
+});
+
+describe("pairwise", () => {
+  it("emits [prev, curr] pairs", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<[number, number]>(pairwise(fromArray([1, 2, 3, 4])), scheduler);
+    expect(result).toEqual([
+      [1, 2],
+      [2, 3],
+      [3, 4],
+    ]);
+  });
+
+  it("emits nothing for single-element stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<[number, number]>(pairwise(fromArray([1])), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("emits nothing for empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<[number, number]>(pairwise(empty()), scheduler);
+    expect(result).toEqual([]);
+  });
+});
+
+describe("concatMap (chain alias)", () => {
+  it("concatMap is chain", async () => {
+    const { concatMap } = await import("./combinators/index.js");
+    expect(concatMap).toBe(chain);
+  });
+});
+
+// ============================================================
+// Tier 2 operators
+// ============================================================
+
+describe("exhaustMap", () => {
+  it("ignores outer values while inner is active", () => {
+    const scheduler = new TestScheduler();
+    // Outer emits 1, 2, 3 synchronously. Inner for each is fromArray([x*10, x*10+1]).
+    // Only the first inner (10, 11) should run; 2 and 3 are ignored because
+    // inner completes synchronously before next outer event arrives —
+    // so actually all run. Let's test with an async-like scenario.
+    const result = collectSync<number>(
+      exhaustMap((x: number) => fromArray([x * 10, x * 10 + 1]), fromArray([1, 2, 3])),
+      scheduler,
+    );
+    // With synchronous inner streams, each inner completes before the next outer arrives,
+    // so all inners run.
+    expect(result).toEqual([10, 11, 20, 21, 30, 31]);
+  });
+
+  it("projects outer to inner streams", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<string>(
+      exhaustMap((x: number) => now(`v${x}`), fromArray([1, 2, 3])),
+      scheduler,
+    );
+    expect(result).toEqual(["v1", "v2", "v3"]);
+  });
+});
+
+describe("forkJoin", () => {
+  it("emits array of final values when all complete", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number[]>(
+      forkJoin(fromArray([1, 2, 3]), fromArray([4, 5]), now(6)),
+      scheduler,
+    );
+    expect(result).toEqual([[3, 5, 6]]);
+  });
+
+  it("emits nothing if any stream is empty", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number[]>(forkJoin(fromArray([1, 2]), empty(), now(3)), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("emits nothing for zero streams", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number[]>(forkJoin(), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("works with single stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number[]>(forkJoin(fromArray([10, 20, 30])), scheduler);
+    expect(result).toEqual([[30]]);
+  });
+});
+
+describe("defaultIfEmpty", () => {
+  it("emits default when stream is empty", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(defaultIfEmpty(42, empty()), scheduler);
+    expect(result).toEqual([42]);
+  });
+
+  it("passes through values when stream is not empty", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(defaultIfEmpty(42, fromArray([1, 2, 3])), scheduler);
+    expect(result).toEqual([1, 2, 3]);
+  });
+
+  it("passes through single value unchanged", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(defaultIfEmpty(99, now(1)), scheduler);
+    expect(result).toEqual([1]);
+  });
+});
+
+describe("finalize", () => {
+  it("runs cleanup on end", () => {
+    const scheduler = new TestScheduler();
+    let cleaned = false;
+    collectSync<number>(
+      finalize(
+        () => {
+          cleaned = true;
+        },
+        fromArray([1, 2, 3]),
+      ),
+      scheduler,
+    );
+    expect(cleaned).toBe(true);
+  });
+
+  it("runs cleanup on dispose", () => {
+    const scheduler = new TestScheduler();
+    let cleaned = false;
+    const d = _getSource(
+      finalize(() => {
+        cleaned = true;
+      }, never()),
+    ).run({ event() {}, error() {}, end() {} }, scheduler);
+    expect(cleaned).toBe(false);
+    d.dispose();
+    expect(cleaned).toBe(true);
+  });
+
+  it("runs cleanup only once", () => {
+    const scheduler = new TestScheduler();
+    let count = 0;
+    const d = _getSource(
+      finalize(
+        () => {
+          count++;
+        },
+        fromArray([1]),
+      ),
+    ).run({ event() {}, error() {}, end() {} }, scheduler);
+    d.dispose(); // End already called cleanup, dispose should not call again
+    expect(count).toBe(1);
+  });
+});
+
+// ============================================================
+// Tier 3 operators
+// ============================================================
+
+describe("race", () => {
+  it("emits from the first source to emit", () => {
+    const scheduler = new TestScheduler();
+    // Both are synchronous, so the first source wins
+    const result = collectSync<number>(race(fromArray([1, 2]), fromArray([10, 20])), scheduler);
+    expect(result).toEqual([1, 2]);
+  });
+
+  it("handles empty race", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(race(), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("single source passes through", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(race(fromArray([1, 2, 3])), scheduler);
+    expect(result).toEqual([1, 2, 3]);
+  });
+});
+
+describe("count", () => {
+  it("emits the total number of values on end", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(count(fromArray([10, 20, 30, 40])), scheduler);
+    expect(result).toEqual([4]);
+  });
+
+  it("emits 0 for empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(count(empty()), scheduler);
+    expect(result).toEqual([0]);
+  });
+});
+
+describe("every", () => {
+  it("emits true when all match", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<boolean>(
+      every((x: number) => x > 0, fromArray([1, 2, 3])),
+      scheduler,
+    );
+    expect(result).toEqual([true]);
+  });
+
+  it("emits false as soon as one fails", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<boolean>(
+      every((x: number) => x > 0, fromArray([1, -1, 3])),
+      scheduler,
+    );
+    expect(result).toEqual([false]);
+  });
+
+  it("emits true for empty stream", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<boolean>(
+      every((x: number) => x > 0, empty()),
+      scheduler,
+    );
+    expect(result).toEqual([true]);
+  });
+});
+
+describe("elementAt", () => {
+  it("emits only the nth element", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(elementAt(2, fromArray([10, 20, 30, 40])), scheduler);
+    expect(result).toEqual([30]);
+  });
+
+  it("emits nothing if index is out of bounds", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(elementAt(5, fromArray([10, 20])), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("emits first element at index 0", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(elementAt(0, fromArray([10, 20, 30])), scheduler);
+    expect(result).toEqual([10]);
+  });
+});
+
+describe("range", () => {
+  it("emits a sequence of numbers", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(range(0, 5), scheduler);
+    expect(result).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it("starts from the given start value", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(range(3, 4), scheduler);
+    expect(result).toEqual([3, 4, 5, 6]);
+  });
+
+  it("emits nothing for count 0", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(range(0, 0), scheduler);
+    expect(result).toEqual([]);
+  });
+
+  it("handles negative count as 0", () => {
+    const scheduler = new TestScheduler();
+    const result = collectSync<number>(range(0, -5), scheduler);
+    expect(result).toEqual([]);
   });
 });

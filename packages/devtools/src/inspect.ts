@@ -117,6 +117,23 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     RetrySource: "retry",
     ShareSource: "share",
     WithLatestFromSource: "withLatestFrom",
+    DistinctUntilChangedSource: "distinctUntilChanged",
+    StartWithSource: "startWith",
+    FirstSource: "first",
+    LastSource: "last",
+    PairwiseSource: "pairwise",
+    TimeoutSource: "timeout",
+    ExhaustMapSource: "exhaustMap",
+    ForkJoinSource: "forkJoin",
+    DefaultIfEmptySource: "defaultIfEmpty",
+    FinalizeSource: "finalize",
+    RaceSource: "race",
+    CountSource: "count",
+    EverySource: "every",
+    ElementAtSource: "elementAt",
+    RangeSource: "range",
+    ConstantSource: "constant",
+    SliceSource: "slice",
   };
 
   if (ctorName in nameMap) {

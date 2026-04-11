@@ -4,7 +4,7 @@
 export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "@pulse/types";
 
 // Event constructors
-export { empty, never, now, at, fromArray, fromIterable, periodic } from "./constructors.js";
+export { empty, never, now, at, fromArray, fromIterable, periodic, range } from "./constructors.js";
 
 // Event combinators
 export {
@@ -42,6 +42,22 @@ export {
   retry,
   share,
   withLatestFrom,
+  distinctUntilChanged,
+  startWith,
+  first,
+  last,
+  pairwise,
+  concatMap,
+  timeout,
+  TimeoutError,
+  exhaustMap,
+  forkJoin,
+  defaultIfEmpty,
+  finalize,
+  race,
+  count,
+  every,
+  elementAt,
 } from "./combinators/index.js";
 
 // Behavior constructors and combinators

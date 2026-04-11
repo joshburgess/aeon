@@ -210,6 +210,43 @@ class PeriodicSource implements Source<undefined, never> {
 export const periodic = (period: Duration): Event<undefined, never> =>
   _createEvent(new PeriodicSource(period));
 
+class RangeSource implements Source<number, never> {
+  declare readonly start: number;
+  declare readonly count: number;
+  declare readonly _sync: true;
+
+  constructor(start: number, count: number) {
+    this.start = start;
+    this.count = count;
+    this._sync = true;
+  }
+
+  run(sink: Sink<number, never>, scheduler: Scheduler): Disposable {
+    const t = scheduler.currentTime();
+    const end = this.start + this.count;
+    for (let i = this.start; i < end; i++) {
+      sink.event(t, i);
+    }
+    sink.end(t);
+    return disposeNone;
+  }
+
+  syncIterate(emit: (value: number) => boolean): void {
+    const end = this.start + this.count;
+    for (let i = this.start; i < end; i++) {
+      if (!emit(i)) return;
+    }
+  }
+}
+
+/**
+ * An Event that emits a sequence of numbers synchronously, then ends.
+ *
+ * Denotation: `[(t, start), (t, start+1), ..., (t, start+count-1)]`
+ */
+export const range = (start: number, count: number): Event<number, never> =>
+  _createEvent(new RangeSource(start, Math.max(0, count)));
+
 class IterableSource<A> implements Source<A, never> {
   declare readonly iterable: Iterable<A>;
   declare readonly _sync: true;

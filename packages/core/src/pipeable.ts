@@ -15,15 +15,27 @@ import {
   snapshot as snapshotDirect,
   switchB as switchBDirect,
 } from "./behavior.js";
+import {
+  count as countDirect,
+  elementAt as elementAtDirect,
+  every as everyDirect,
+} from "./combinators/aggregate.js";
 import { chain as chainDirect } from "./combinators/chain.js";
 import { combine as combineDirect, zip as zipDirect } from "./combinators/combine.js";
 import { constant as constantDirect } from "./combinators/constant.js";
+import { defaultIfEmpty as defaultIfEmptyDirect } from "./combinators/defaultIfEmpty.js";
+import { distinctUntilChanged as distinctUntilChangedDirect } from "./combinators/distinctUntilChanged.js";
 import { catchError as catchErrorDirect, mapError as mapErrorDirect } from "./combinators/error.js";
+import { exhaustMap as exhaustMapDirect } from "./combinators/exhaustMap.js";
 import { filter as filterDirect } from "./combinators/filter.js";
+import { finalize as finalizeDirect } from "./combinators/finalize.js";
+import { first as firstDirect, last as lastDirect } from "./combinators/firstLast.js";
+import { forkJoin as forkJoinDirect } from "./combinators/forkJoin.js";
 import { map as mapDirect } from "./combinators/map.js";
 import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { merge as mergeDirect } from "./combinators/merge.js";
 import { mergeMapConcurrently as mergeMapDirect } from "./combinators/mergeMap.js";
+import { pairwise as pairwiseDirect } from "./combinators/pairwise.js";
 import { retry as retryDirect } from "./combinators/retry.js";
 import { scan as scanDirect } from "./combinators/scan.js";
 import { share as shareDirect } from "./combinators/share.js";
@@ -36,6 +48,7 @@ import {
   takeWhile as takeWhileDirect,
   until as untilDirect,
 } from "./combinators/slice.js";
+import { startWith as startWithDirect } from "./combinators/startWith.js";
 import { switchLatest as switchLatestDirect } from "./combinators/switch.js";
 import { tap as tapDirect } from "./combinators/tap.js";
 import {
@@ -50,6 +63,7 @@ import {
   delay as delayDirect,
   throttle as throttleDirect,
 } from "./combinators/time.js";
+import { timeout as timeoutDirect } from "./combinators/timeout.js";
 import { withLatestFrom as withLatestFromDirect } from "./combinators/withLatestFrom.js";
 
 // --- Event operators ---
@@ -156,6 +170,65 @@ export const since =
   <E>(signal: Event<unknown, E>) =>
   <A>(event: Event<A, E>): Event<A, E> =>
     sinceDirect(signal, event);
+
+export const distinctUntilChanged =
+  <A>(eq?: (a: A, b: A) => boolean) =>
+  <E>(event: Event<A, E>): Event<A, E> =>
+    distinctUntilChangedDirect(event, eq);
+
+export const startWith =
+  <A>(value: A) =>
+  <E>(event: Event<A, E>): Event<A, E> =>
+    startWithDirect(value, event);
+
+export const first =
+  <A>(predicate?: (a: A) => boolean) =>
+  <E>(event: Event<A, E>): Event<A, E> =>
+    firstDirect(event, predicate);
+
+export const last =
+  <A>(predicate?: (a: A) => boolean) =>
+  <E>(event: Event<A, E>): Event<A, E> =>
+    lastDirect(event, predicate);
+
+export const pairwise = <A, E>(event: Event<A, E>): Event<[A, A], E> => pairwiseDirect(event);
+
+export const concatMap =
+  <A, B, E>(f: (a: A) => Event<B, E>) =>
+  (event: Event<A, E>): Event<B, E> =>
+    chainDirect(f, event);
+
+export const timeout =
+  (duration: Duration) =>
+  <A, E>(event: Event<A, E>) =>
+    timeoutDirect(duration, event);
+
+export const exhaustMap =
+  <A, B, E>(f: (a: A) => Event<B, E>) =>
+  (event: Event<A, E>): Event<B, E> =>
+    exhaustMapDirect(f, event);
+
+export const defaultIfEmpty =
+  <A>(value: A) =>
+  <E>(event: Event<A, E>): Event<A, E> =>
+    defaultIfEmptyDirect(value, event);
+
+export const finalize =
+  (cleanup: () => void) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    finalizeDirect(cleanup, event);
+
+export const count = <A, E>(event: Event<A, E>): Event<number, E> => countDirect(event);
+
+export const every =
+  <A>(predicate: (a: A) => boolean) =>
+  <E>(event: Event<A, E>): Event<boolean, E> =>
+    everyDirect(predicate, event);
+
+export const elementAt =
+  (n: number) =>
+  <A, E>(event: Event<A, E>): Event<A, E> =>
+    elementAtDirect(n, event);
 
 // --- Time operators ---
 

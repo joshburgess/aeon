@@ -10,23 +10,33 @@
 import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
 import { toAsyncIterator } from "./asyncIterator.js";
 import { sample, snapshot } from "./behavior.js";
+import { count, elementAt, every } from "./combinators/aggregate.js";
 import { chain } from "./combinators/chain.js";
 import { combine, zip } from "./combinators/combine.js";
 import { constant } from "./combinators/constant.js";
+import { defaultIfEmpty } from "./combinators/defaultIfEmpty.js";
+import { distinctUntilChanged } from "./combinators/distinctUntilChanged.js";
 import { catchError, mapError } from "./combinators/error.js";
+import { exhaustMap } from "./combinators/exhaustMap.js";
 import { filter } from "./combinators/filter.js";
+import { finalize } from "./combinators/finalize.js";
+import { first, last } from "./combinators/firstLast.js";
 import { map } from "./combinators/map.js";
 import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { pairwise } from "./combinators/pairwise.js";
+import { race } from "./combinators/race.js";
 import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
 import { share } from "./combinators/share.js";
 import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
+import { startWith } from "./combinators/startWith.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { bufferCount, bufferTime, debounce, delay, throttle } from "./combinators/time.js";
+import { timeout } from "./combinators/timeout.js";
 import { withLatestFrom } from "./combinators/withLatestFrom.js";
 import { multicast } from "./multicast.js";
 
@@ -63,6 +73,30 @@ export class FluentEvent<A, E> {
 
   scan<B>(f: (acc: B, a: A) => B, seed: B): FluentEvent<B, E> {
     return new FluentEvent(scan(f, seed, this.event));
+  }
+
+  distinctUntilChanged(eq?: (a: A, b: A) => boolean): FluentEvent<A, E> {
+    return new FluentEvent(distinctUntilChanged(this.event, eq));
+  }
+
+  startWith(value: A): FluentEvent<A, E> {
+    return new FluentEvent(startWith(value, this.event));
+  }
+
+  pairwise(): FluentEvent<[A, A], E> {
+    return new FluentEvent(pairwise(this.event));
+  }
+
+  first(predicate?: (a: A) => boolean): FluentEvent<A, E> {
+    return new FluentEvent(first(this.event, predicate));
+  }
+
+  last(predicate?: (a: A) => boolean): FluentEvent<A, E> {
+    return new FluentEvent(last(this.event, predicate));
+  }
+
+  concatMap<B>(f: (a: A) => Event<B, E>): FluentEvent<B, E> {
+    return new FluentEvent(chain(f, this.event));
   }
 
   // --- Slicing ---
@@ -123,6 +157,10 @@ export class FluentEvent<A, E> {
     return new FluentEvent(mapAsync(f, concurrency, this.event));
   }
 
+  exhaustMap<B>(f: (a: A) => Event<B, E>): FluentEvent<B, E> {
+    return new FluentEvent(exhaustMap(f, this.event));
+  }
+
   // --- Error handling ---
 
   catchError<E2>(handler: (err: E) => Event<A, E2>): FluentEvent<A, E2> {
@@ -171,6 +209,34 @@ export class FluentEvent<A, E> {
 
   withLatestFrom<B, C>(f: (a: A, b: B) => C, sampler: Event<B, E>): FluentEvent<C, E> {
     return new FluentEvent(withLatestFrom(f, this.event, sampler));
+  }
+
+  timeout(duration: Duration) {
+    return new FluentEvent(timeout(duration, this.event));
+  }
+
+  defaultIfEmpty(value: A): FluentEvent<A, E> {
+    return new FluentEvent(defaultIfEmpty(value, this.event));
+  }
+
+  finalize(cleanup: () => void): FluentEvent<A, E> {
+    return new FluentEvent(finalize(cleanup, this.event));
+  }
+
+  count(): FluentEvent<number, E> {
+    return new FluentEvent(count(this.event));
+  }
+
+  every(predicate: (a: A) => boolean): FluentEvent<boolean, E> {
+    return new FluentEvent(every(predicate, this.event));
+  }
+
+  elementAt(n: number): FluentEvent<A, E> {
+    return new FluentEvent(elementAt(n, this.event));
+  }
+
+  race(...others: Event<A, E>[]): FluentEvent<A, E> {
+    return new FluentEvent(race(this.event, ...others));
   }
 
   // --- Utilities ---
