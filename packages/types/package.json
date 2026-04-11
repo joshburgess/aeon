@@ -1,7 +1,17 @@
 {
   "name": "@pulse/types",
   "version": "0.0.1",
+  "description": "Core type definitions for Pulse reactive streams",
+  "license": "MIT",
+  "author": "Josh Burgess",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshburgess/pulse",
+    "directory": "packages/types"
+  },
+  "keywords": ["reactive", "streams", "frp", "types", "typescript"],
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
