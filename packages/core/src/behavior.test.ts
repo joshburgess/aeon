@@ -2,16 +2,21 @@ import { VirtualScheduler } from "@pulse/scheduler";
 import { type Behavior, type Sink, type Time, toDuration, toTime } from "@pulse/types";
 import { describe, expect, it } from "vitest";
 import {
+  accumB,
   constantB,
+  derivative,
   fromFunction,
   integral,
   liftA2B,
   liftA3B,
+  liftA4B,
+  liftA5B,
   mapB,
   readBehavior,
   sample,
   snapshot,
   stepper,
+  switchB,
   switcher,
   time as timeBehavior,
 } from "./behavior.js";
@@ -97,6 +102,40 @@ describe("Behavior Applicative (liftA2B)", () => {
       constantB(3),
     );
     expect(readBehavior(b, toTime(0))).toBe(6);
+  });
+
+  it("liftA4B combines four behaviors", () => {
+    const b = liftA4B(
+      (a: number, b: number, c: number, d: number) => a + b + c + d,
+      constantB(1),
+      constantB(2),
+      constantB(3),
+      constantB(4),
+    );
+    expect(readBehavior(b, toTime(0))).toBe(10);
+  });
+
+  it("liftA4B works with function behaviors", () => {
+    const b = liftA4B(
+      (a: number, b: number, c: number, t: number) => (a + b + c) * t,
+      constantB(1),
+      constantB(2),
+      constantB(3),
+      fromFunction((t: Time) => t as number),
+    );
+    expect(readBehavior(b, toTime(5))).toBe(30);
+  });
+
+  it("liftA5B combines five behaviors", () => {
+    const b = liftA5B(
+      (a: number, b: number, c: number, d: number, e: number) => a + b + c + d + e,
+      constantB(1),
+      constantB(2),
+      constantB(3),
+      constantB(4),
+      constantB(5),
+    );
+    expect(readBehavior(b, toTime(0))).toBe(15);
   });
 });
 
@@ -199,6 +238,65 @@ describe("stepper", () => {
 
     pushValue?.(toTime(20), 99);
     expect(readBehavior(b, toTime(20))).toBe(99);
+
+    d.dispose();
+  });
+});
+
+describe("accumB", () => {
+  it("accumulates event values with a fold function", () => {
+    const scheduler = new VirtualScheduler();
+    let pushValue: ((t: Time, v: number) => void) | undefined;
+    const event = _createEvent<number, never>({
+      run(sink) {
+        pushValue = (t, v) => sink.event(t, v);
+        return {
+          dispose() {
+            pushValue = undefined;
+          },
+        };
+      },
+    });
+
+    const [b, d] = accumB((acc: number, x: number) => acc + x, 0, event, scheduler);
+    expect(readBehavior(b, toTime(0))).toBe(0);
+
+    pushValue?.(toTime(1), 5);
+    expect(readBehavior(b, toTime(1))).toBe(5);
+
+    pushValue?.(toTime(2), 3);
+    expect(readBehavior(b, toTime(2))).toBe(8);
+
+    pushValue?.(toTime(3), 10);
+    expect(readBehavior(b, toTime(3))).toBe(18);
+
+    d.dispose();
+  });
+
+  it("invalidates downstream caches on accumulation", () => {
+    const scheduler = new VirtualScheduler();
+    let pushValue: ((t: Time, v: number) => void) | undefined;
+    const event = _createEvent<number, never>({
+      run(sink) {
+        pushValue = (t, v) => sink.event(t, v);
+        return {
+          dispose() {
+            pushValue = undefined;
+          },
+        };
+      },
+    });
+
+    const [b, d] = accumB((acc: number, x: number) => acc + x, 0, event, scheduler);
+    const doubled = mapB((x: number) => x * 2, b);
+
+    expect(readBehavior(doubled, toTime(0))).toBe(0);
+
+    pushValue?.(toTime(1), 7);
+    expect(readBehavior(doubled, toTime(1))).toBe(14);
+
+    pushValue?.(toTime(2), 3);
+    expect(readBehavior(doubled, toTime(2))).toBe(20);
 
     d.dispose();
   });
@@ -388,6 +486,36 @@ describe("switcher", () => {
   });
 });
 
+describe("switchB (Behavior Monad join)", () => {
+  it("flattens constant of constant", () => {
+    const bb = constantB(constantB(42));
+    const b = switchB(bb);
+    expect(readBehavior(b, toTime(0))).toBe(42);
+    expect(readBehavior(b, toTime(100))).toBe(42);
+  });
+
+  it("flattens function-of-constant: outer selects inner", () => {
+    // Outer behavior returns different inner behaviors based on time
+    const inner1 = constantB(10);
+    const inner2 = constantB(20);
+    const bb = fromFunction((t: Time) => ((t as number) < 50 ? inner1 : inner2));
+    const b = switchB(bb);
+    expect(readBehavior(b, toTime(0))).toBe(10);
+    expect(readBehavior(b, toTime(49))).toBe(10);
+    expect(readBehavior(b, toTime(50))).toBe(20);
+    expect(readBehavior(b, toTime(100))).toBe(20);
+  });
+
+  it("flattens and samples inner function behavior at correct time", () => {
+    // bb(t) = fromFunction(s => s * 2), so switchB(bb)(t) = t * 2
+    const inner = fromFunction((t: Time) => (t as number) * 2);
+    const bb = constantB(inner);
+    const b = switchB(bb);
+    expect(readBehavior(b, toTime(5))).toBe(10);
+    expect(readBehavior(b, toTime(25))).toBe(50);
+  });
+});
+
 describe("integral", () => {
   it("integral of constant(1) approximates t => t", () => {
     const dt = toDuration(1);
@@ -430,5 +558,67 @@ describe("integral", () => {
     // ∫₀¹⁰ 1 ds = 10, with dt=3 we get steps at 0,3,6,9 and a partial step from 9 to 10
     const b = integral(constantB(1), dt);
     expect(readBehavior(b, toTime(10))).toBeCloseTo(10, 5);
+  });
+});
+
+describe("derivative", () => {
+  it("derivative of constant is 0", () => {
+    const dt = toDuration(1);
+    const b = derivative(constantB(5), dt);
+    expect(readBehavior(b, toTime(0))).toBe(0);
+    expect(readBehavior(b, toTime(10))).toBe(0);
+    expect(readBehavior(b, toTime(100))).toBe(0);
+  });
+
+  it("derivative of t => t is approximately 1", () => {
+    const dt = toDuration(0.01);
+    const b = derivative(
+      fromFunction((t: Time) => t as number),
+      dt,
+    );
+    expect(readBehavior(b, toTime(0))).toBe(0);
+    expect(readBehavior(b, toTime(1))).toBeCloseTo(1, 5);
+    expect(readBehavior(b, toTime(50))).toBeCloseTo(1, 5);
+  });
+
+  it("derivative of t => t² is approximately 2t", () => {
+    const dt = toDuration(0.001);
+    const b = derivative(
+      fromFunction((t: Time) => (t as number) * (t as number)),
+      dt,
+    );
+    // d/dt(t²) = 2t
+    expect(readBehavior(b, toTime(5))).toBeCloseTo(10, 1);
+    expect(readBehavior(b, toTime(10))).toBeCloseTo(20, 1);
+    expect(readBehavior(b, toTime(50))).toBeCloseTo(100, 0);
+  });
+
+  it("at time 0 returns 0", () => {
+    const dt = toDuration(1);
+    const b = derivative(
+      fromFunction((t: Time) => (t as number) * 3),
+      dt,
+    );
+    expect(readBehavior(b, toTime(0))).toBe(0);
+  });
+
+  it("handles t < dt by using available interval", () => {
+    const dt = toDuration(10);
+    // With dt=10, at t=3 we use interval [0, 3]
+    // d/dt(5t) at t=3 with interval 3: (15 - 0) / 3 = 5
+    const b = derivative(
+      fromFunction((t: Time) => (t as number) * 5),
+      dt,
+    );
+    expect(readBehavior(b, toTime(3))).toBeCloseTo(5, 5);
+  });
+
+  it("integral then derivative recovers original (round-trip)", () => {
+    const dt = toDuration(0.01);
+    const original = constantB(7);
+    // ∫₀ᵗ 7 ds = 7t, then d/dt(7t) = 7
+    const roundTrip = derivative(integral(original, dt), dt);
+    expect(readBehavior(roundTrip, toTime(10))).toBeCloseTo(7, 1);
+    expect(readBehavior(roundTrip, toTime(50))).toBeCloseTo(7, 1);
   });
 });

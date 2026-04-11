@@ -107,6 +107,8 @@ export const liftA2B = <A1, A2, B, E>(
 
 /**
  * Lift a ternary function over three Behaviors.
+ *
+ * Denotation: `liftA3B(f, ba, bb, bc) = t => f(ba(t), bb(t), bc(t))`
  */
 export const liftA3B = <A1, A2, A3, B, E>(
   f: (a1: A1, a2: A2, a3: A3) => B,
@@ -118,6 +120,43 @@ export const liftA3B = <A1, A2, A3, B, E>(
     (ab: (a3: A3) => B, c: A3) => ab(c),
     liftA2B((a: A1, b: A2) => (c: A3) => f(a, b, c), ba, bb),
     bc,
+  );
+
+/**
+ * Lift a quaternary function over four Behaviors.
+ *
+ * Denotation: `liftA4B(f, ba, bb, bc, bd) = t => f(ba(t), bb(t), bc(t), bd(t))`
+ */
+export const liftA4B = <A1, A2, A3, A4, B, E>(
+  f: (a1: A1, a2: A2, a3: A3, a4: A4) => B,
+  ba: Behavior<A1, E>,
+  bb: Behavior<A2, E>,
+  bc: Behavior<A3, E>,
+  bd: Behavior<A4, E>,
+): Behavior<B, E> =>
+  liftA2B(
+    (abc: (a4: A4) => B, d: A4) => abc(d),
+    liftA3B((a: A1, b: A2, c: A3) => (d: A4) => f(a, b, c, d), ba, bb, bc),
+    bd,
+  );
+
+/**
+ * Lift a quinary function over five Behaviors.
+ *
+ * Denotation: `liftA5B(f, ba, bb, bc, bd, be) = t => f(ba(t), bb(t), bc(t), bd(t), be(t))`
+ */
+export const liftA5B = <A1, A2, A3, A4, A5, B, E>(
+  f: (a1: A1, a2: A2, a3: A3, a4: A4, a5: A5) => B,
+  ba: Behavior<A1, E>,
+  bb: Behavior<A2, E>,
+  bc: Behavior<A3, E>,
+  bd: Behavior<A4, E>,
+  be: Behavior<A5, E>,
+): Behavior<B, E> =>
+  liftA2B(
+    (abcd: (a5: A5) => B, e: A5) => abcd(e),
+    liftA4B((a: A1, b: A2, c: A3, d: A4) => (e: A5) => f(a, b, c, d, e), ba, bb, bc, bd),
+    be,
   );
 
 // --- Event ↔ Behavior Bridge ---
@@ -148,6 +187,46 @@ export const stepper = <A, E>(
 
   const disposable = subscribeStepperToEvent(impl, event, scheduler);
   return [_createBehavior<A, E>(impl), disposable];
+};
+
+/**
+ * Create a Behavior that accumulates event values with a fold function.
+ *
+ * Denotation: `accumB(f, init, e) = t => foldl f init [v | (t', v) ∈ e, t' <= t]`
+ *
+ * Like `stepper` but applies a reducer to each event instead of replacing
+ * the held value. Equivalent to `stepper(init, scan(f, init, e))` but
+ * without an intermediate Event allocation.
+ */
+export const accumB = <A, B, E>(
+  f: (acc: B, a: A) => B,
+  initial: B,
+  event: Event<A, E>,
+  scheduler: Scheduler,
+): [Behavior<B, E>, Disposable] => {
+  const impl: BehaviorImpl<B> & { tag: "stepper" } = {
+    tag: "stepper",
+    initial,
+    value: initial,
+    time: scheduler.currentTime(),
+    generation: 0,
+  };
+
+  const source = _getSource(event);
+  const disposable = source.run(
+    {
+      event(time: Time, value: A) {
+        impl.value = f(impl.value, value);
+        impl.time = time;
+        impl.generation++;
+      },
+      error() {},
+      end() {},
+    },
+    scheduler,
+  );
+
+  return [_createBehavior<B, E>(impl), disposable];
 };
 
 /**
@@ -243,6 +322,21 @@ export const switcher = <A, E>(
   return [_createBehavior<A, E>(impl), disposable];
 };
 
+/**
+ * Flatten a Behavior of Behaviors — the Monad join for Behaviors.
+ *
+ * Denotation: `switchB(bb) = t => bb(t)(t)`
+ *
+ * At time `t`, samples the outer behavior to get the inner behavior,
+ * then samples the inner behavior at the same time. This is inherently
+ * non-cacheable (the inner behavior can change at any time).
+ */
+export const switchB = <A, E>(bb: Behavior<Behavior<A, E>, E>): Behavior<A, E> =>
+  _createBehavior<A, E>({
+    tag: "function",
+    f: (t: Time) => sampleBehavior(sampleBehavior(bb, t), t),
+  });
+
 // --- Integration ---
 
 /**
@@ -283,6 +377,31 @@ export const integral = (
     }
 
     return acc;
+  });
+};
+
+/**
+ * Numerical differentiation of a Behavior over time.
+ *
+ * Denotation: `derivative(b, dt) ≈ t => db/dt(t)`
+ *
+ * Uses the backward finite difference: `(b(t) - b(t - dt)) / dt`.
+ * At `t = 0`, returns 0 (no history). For `t < dt`, uses the
+ * available interval `[0, t]`.
+ */
+export const derivative = (
+  behavior: Behavior<number, never>,
+  dt: Duration,
+): Behavior<number, never> => {
+  const step = dt as number;
+  return fromFunction((t: Time) => {
+    const tNum = t as number;
+    if (tNum <= 0) return 0;
+
+    const interval = Math.min(step, tNum);
+    const curr = sampleBehavior(behavior, t) as number;
+    const prev = sampleBehavior(behavior, (tNum - interval) as Time) as number;
+    return (curr - prev) / interval;
   });
 };
 

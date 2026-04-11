@@ -53,11 +53,16 @@ export {
   mapB,
   liftA2B,
   liftA3B,
+  liftA4B,
+  liftA5B,
   stepper,
+  accumB,
   sample,
   snapshot,
   switcher,
+  switchB,
   integral,
+  derivative,
   readBehavior,
 } from "./behavior.js";
 

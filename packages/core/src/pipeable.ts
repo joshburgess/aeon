@@ -7,11 +7,13 @@
 
 import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
 import {
+  derivative as derivativeDirect,
   integral as integralDirect,
   liftA2B as liftA2BDirect,
   mapB as mapBDirect,
   sample as sampleDirect,
   snapshot as snapshotDirect,
+  switchB as switchBDirect,
 } from "./behavior.js";
 import { chain as chainDirect } from "./combinators/chain.js";
 import { combine as combineDirect, zip as zipDirect } from "./combinators/combine.js";
@@ -220,3 +222,10 @@ export const integral =
   (dt: Duration) =>
   (behavior: Behavior<number, never>): Behavior<number, never> =>
     integralDirect(behavior, dt);
+
+export const derivative =
+  (dt: Duration) =>
+  (behavior: Behavior<number, never>): Behavior<number, never> =>
+    derivativeDirect(behavior, dt);
+
+export const switchB = <A, E>(bb: Behavior<Behavior<A, E>, E>): Behavior<A, E> => switchBDirect(bb);
