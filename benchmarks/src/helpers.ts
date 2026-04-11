@@ -2,8 +2,8 @@
  * Shared helpers for benchmark suites.
  */
 
-import type { Stream } from "@most/types";
 import { newStream } from "@most/core";
+import type { Stream } from "@most/types";
 
 /** Create a @most/core Stream from an array (not built-in). */
 export const mostFromArray = <A>(arr: readonly A[]): Stream<A> =>

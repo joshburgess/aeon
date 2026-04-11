@@ -1,10 +1,10 @@
-import { type Source, type Time, toTime } from "@pulse/types";
+import { filter, fromArray, map, merge, scan, take } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
-import { fromArray, map, filter, take, merge, scan } from "@pulse/core";
+import { type Source, type Time, toTime } from "@pulse/types";
 import { describe, expect, it, vi } from "vitest";
-import { label, getLabel } from "./label.js";
-import { trace } from "./trace.js";
 import { inspect } from "./inspect.js";
+import { getLabel, label } from "./label.js";
+import { trace } from "./trace.js";
 
 describe("label", () => {
   it("attaches a label retrievable via getLabel", () => {
@@ -21,7 +21,9 @@ describe("label", () => {
     const values: number[] = [];
     (labeled as unknown as Source<number, never>).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
         end() {},
       },
@@ -40,7 +42,9 @@ describe("trace", () => {
   it("logs events, errors, and ends", () => {
     const scheduler = new VirtualScheduler();
     const logs: unknown[][] = [];
-    const mockLog = (...args: unknown[]) => { logs.push(args); };
+    const mockLog = (...args: unknown[]) => {
+      logs.push(args);
+    };
 
     const event = fromArray([1, 2]);
     const traced = trace(event, { log: mockLog, label: "test" });
@@ -70,7 +74,9 @@ describe("trace", () => {
     const values: number[] = [];
     (traced as unknown as Source<number, never>).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
         end() {},
       },
@@ -82,7 +88,9 @@ describe("trace", () => {
   it("uses label from labeled stream", () => {
     const scheduler = new VirtualScheduler();
     const logs: unknown[][] = [];
-    const mockLog = (...args: unknown[]) => { logs.push(args); };
+    const mockLog = (...args: unknown[]) => {
+      logs.push(args);
+    };
 
     const event = label("clicks", fromArray([1]));
     const traced = trace(event, { log: mockLog });
@@ -96,7 +104,7 @@ describe("trace", () => {
       scheduler,
     );
 
-    expect((logs[0]![0] as string)).toContain("[clicks]");
+    expect(logs[0]![0] as string).toContain("[clicks]");
   });
 });
 
@@ -133,7 +141,10 @@ describe("inspect", () => {
   });
 
   it("inspects a take -> scan -> fromArray pipeline", () => {
-    const event = take(5, scan((acc: number, x: number) => acc + x, 0, fromArray([1, 2, 3])));
+    const event = take(
+      5,
+      scan((acc: number, x: number) => acc + x, 0, fromArray([1, 2, 3])),
+    );
     const tree = inspect(event);
     expect(tree.type).toBe("take");
     expect(tree.children).toHaveLength(1);

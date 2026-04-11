@@ -7,17 +7,17 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, take, skip, drain } from "@pulse/core";
+import { drain, fromArray, skip, take } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
-import { take as mostTake, skip as mostSkip, runEffects } from "@most/core";
+import { skip as mostSkip, take as mostTake, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 // --- RxJS ---
-import { from as rxFrom, take as rxTake, skip as rxSkip, lastValueFrom } from "rxjs";
+import { lastValueFrom, from as rxFrom, skip as rxSkip, take as rxTake } from "rxjs";
 
 // --- Helpers ---
 import { range } from "./helpers.js";

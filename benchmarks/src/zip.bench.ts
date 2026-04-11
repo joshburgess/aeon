@@ -8,17 +8,17 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, zip, drain } from "@pulse/core";
+import { drain, fromArray, zip } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
 import { zip as mostZip, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 // --- RxJS ---
-import { from as rxFrom, zip as rxZip, lastValueFrom } from "rxjs";
+import { lastValueFrom, from as rxFrom, zip as rxZip } from "rxjs";
 
 // --- Helpers ---
 import { add, range } from "./helpers.js";

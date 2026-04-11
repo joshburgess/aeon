@@ -1,9 +1,9 @@
-import { type Time, toTime } from "@pulse/types";
 import { VirtualScheduler } from "@pulse/scheduler";
+import { type Time, toTime } from "@pulse/types";
 import { describe, expect, it } from "vitest";
-import { fluent, FluentEvent } from "./fluent.js";
 import { constantB } from "./behavior.js";
-import { fromArray, now, empty } from "./constructors.js";
+import { empty, fromArray, now } from "./constructors.js";
+import { FluentEvent, fluent } from "./fluent.js";
 import { _getSource } from "./internal/event.js";
 
 describe("fluent API", () => {
@@ -99,7 +99,11 @@ describe("fluent API", () => {
     await fluent(fromArray([1, 2, 3]))
       .zip(fromArray(["a", "b", "c"]))
       .observe((v: [number, string]) => values.push(v), scheduler);
-    expect(values).toEqual([[1, "a"], [2, "b"], [3, "c"]]);
+    expect(values).toEqual([
+      [1, "a"],
+      [2, "b"],
+      [3, "c"],
+    ]);
   });
 
   it("chains sample from behavior", async () => {

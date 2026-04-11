@@ -119,8 +119,7 @@ export const combine = <A, B, C, E>(
   f: (a: A, b: B) => C,
   ea: Event<A, E>,
   eb: Event<B, E>,
-): Event<C, E> =>
-  _createEvent(new CombineSource(f, _getSource(ea), _getSource(eb)));
+): Event<C, E> => _createEvent(new CombineSource(f, _getSource(ea), _getSource(eb)));
 
 // --- zip ---
 

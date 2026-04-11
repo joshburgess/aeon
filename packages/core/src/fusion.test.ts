@@ -120,31 +120,46 @@ describe("Pipeline fusion", () => {
   describe("Algebraic simplifications", () => {
     it("map(f, empty()) → empty()", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(map((x: number) => x + 1, empty()), scheduler);
+      const result = collectSync<number>(
+        map((x: number) => x + 1, empty()),
+        scheduler,
+      );
       expect(result).toEqual([]);
     });
 
     it("filter(p, empty()) → empty()", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(filter((x: number) => x > 0, empty()), scheduler);
+      const result = collectSync<number>(
+        filter((x: number) => x > 0, empty()),
+        scheduler,
+      );
       expect(result).toEqual([]);
     });
 
     it("map(f, now(x)) → now(f(x)) — constant folding", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(map((x: number) => x * 10, now(5)), scheduler);
+      const result = collectSync<number>(
+        map((x: number) => x * 10, now(5)),
+        scheduler,
+      );
       expect(result).toEqual([50]);
     });
 
     it("filter(p, now(x)) passes when predicate holds", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(filter((x: number) => x > 0, now(5)), scheduler);
+      const result = collectSync<number>(
+        filter((x: number) => x > 0, now(5)),
+        scheduler,
+      );
       expect(result).toEqual([5]);
     });
 
     it("filter(p, now(x)) → empty() when predicate fails", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(filter((x: number) => x > 10, now(5)), scheduler);
+      const result = collectSync<number>(
+        filter((x: number) => x > 10, now(5)),
+        scheduler,
+      );
       expect(result).toEqual([]);
     });
 
@@ -162,7 +177,10 @@ describe("Pipeline fusion", () => {
 
     it("scan(f, seed, empty()) → empty()", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(scan((a: number, b: number) => a + b, 0, empty()), scheduler);
+      const result = collectSync<number>(
+        scan((a: number, b: number) => a + b, 0, empty()),
+        scheduler,
+      );
       expect(result).toEqual([]);
     });
   });
@@ -170,19 +188,28 @@ describe("Pipeline fusion", () => {
   describe("Slice fusion", () => {
     it("take(n, take(m, s)) → take(min(n, m), s)", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(take(3, take(5, fromArray([1, 2, 3, 4, 5, 6]))), scheduler);
+      const result = collectSync<number>(
+        take(3, take(5, fromArray([1, 2, 3, 4, 5, 6]))),
+        scheduler,
+      );
       expect(result).toEqual([1, 2, 3]);
     });
 
     it("take(5, take(3, s)) uses the smaller", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(take(5, take(3, fromArray([1, 2, 3, 4, 5, 6]))), scheduler);
+      const result = collectSync<number>(
+        take(5, take(3, fromArray([1, 2, 3, 4, 5, 6]))),
+        scheduler,
+      );
       expect(result).toEqual([1, 2, 3]);
     });
 
     it("skip(n, skip(m, s)) → skip(n + m, s)", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(skip(2, skip(3, fromArray([1, 2, 3, 4, 5, 6, 7]))), scheduler);
+      const result = collectSync<number>(
+        skip(2, skip(3, fromArray([1, 2, 3, 4, 5, 6, 7]))),
+        scheduler,
+      );
       expect(result).toEqual([6, 7]);
     });
   });
@@ -212,7 +239,11 @@ describe("Pipeline fusion", () => {
       const scheduler = new TestScheduler();
       // scan(+, 0, map(x => x * 2, [1,2,3])) → [2, 6, 12]
       const result = collectSync<number>(
-        scan((acc: number, x: number) => acc + x, 0, map((x: number) => x * 2, fromArray([1, 2, 3]))),
+        scan(
+          (acc: number, x: number) => acc + x,
+          0,
+          map((x: number) => x * 2, fromArray([1, 2, 3])),
+        ),
         scheduler,
       );
       expect(result).toEqual([2, 6, 12]);
@@ -222,7 +253,11 @@ describe("Pipeline fusion", () => {
       const scheduler = new TestScheduler();
       const arr = Array.from({ length: 10_000 }, (_, i) => i);
       const fused = collectSync<number>(
-        scan((acc: number, x: number) => acc + x, 0, map((x: number) => x * 3, fromArray(arr))),
+        scan(
+          (acc: number, x: number) => acc + x,
+          0,
+          map((x: number) => x * 3, fromArray(arr)),
+        ),
         scheduler,
       );
       // Compute expected manually
@@ -238,7 +273,12 @@ describe("Pipeline fusion", () => {
   describe("Sync loop compilation", () => {
     it("reduce(f, seed, fromArray) uses sync fast path", async () => {
       const scheduler = new TestScheduler();
-      const result = await reduce((acc: number, x: number) => acc + x, 0, fromArray([1, 2, 3, 4, 5]), scheduler);
+      const result = await reduce(
+        (acc: number, x: number) => acc + x,
+        0,
+        fromArray([1, 2, 3, 4, 5]),
+        scheduler,
+      );
       expect(result).toBe(15);
     });
 
@@ -306,7 +346,11 @@ describe("Pipeline fusion", () => {
       const result = await reduce(
         (acc: number, x: number) => acc + x,
         0,
-        scan((a: number, b: number) => a + b, 0, map((x: number) => x * 2, fromArray([1, 2, 3]))),
+        scan(
+          (a: number, b: number) => a + b,
+          0,
+          map((x: number) => x * 2, fromArray([1, 2, 3])),
+        ),
         scheduler,
       );
       // map produces [2, 4, 6], scan produces [2, 6, 12], reduce sums: 2 + 6 + 12 = 20
@@ -329,7 +373,10 @@ describe("Pipeline fusion", () => {
       const result = await reduce(
         (acc: number, x: number) => acc + x,
         0,
-        map((x: number) => x * 2, filter((x: number) => x % 2 === 0, fromArray([1, 2, 3, 4, 5]))),
+        map(
+          (x: number) => x * 2,
+          filter((x: number) => x % 2 === 0, fromArray([1, 2, 3, 4, 5])),
+        ),
         scheduler,
       );
       // filter: [2, 4], map: [4, 8], reduce: 12
@@ -340,7 +387,12 @@ describe("Pipeline fusion", () => {
       const scheduler = new TestScheduler();
       const n = 100_000;
       const arr = Array.from({ length: n }, (_, i) => i);
-      const result = await reduce((acc: number, x: number) => acc + x, 0, fromArray(arr), scheduler);
+      const result = await reduce(
+        (acc: number, x: number) => acc + x,
+        0,
+        fromArray(arr),
+        scheduler,
+      );
       const expected = (n * (n - 1)) / 2;
       expect(result).toBe(expected);
     });

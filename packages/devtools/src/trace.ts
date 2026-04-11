@@ -5,14 +5,7 @@
  * The stream's values pass through unchanged.
  */
 
-import type {
-  Disposable,
-  Event as PulseEvent,
-  Scheduler,
-  Sink,
-  Source,
-  Time,
-} from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "@pulse/types";
 import { getLabel } from "./label.js";
 
 /** Options for trace output. */
@@ -81,10 +74,7 @@ class TraceSource<A, E> implements Source<A, E> {
  * // [clicks] event(150) MouseEvent { ... }
  * ```
  */
-export const trace = <A, E>(
-  event: PulseEvent<A, E>,
-  options?: TraceOptions,
-): PulseEvent<A, E> => {
+export const trace = <A, E>(event: PulseEvent<A, E>, options?: TraceOptions): PulseEvent<A, E> => {
   const source = event as unknown as Source<A, E>;
   const prefix = options?.label ?? getLabel(source) ?? "trace";
   const logFn = options?.log ?? console.log;

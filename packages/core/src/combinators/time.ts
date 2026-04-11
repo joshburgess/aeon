@@ -17,8 +17,8 @@ import type {
   Source,
   Time,
 } from "@pulse/types";
-import { _createEvent, _getSource } from "../internal/event.js";
 import { Pipe } from "../internal/Pipe.js";
+import { _createEvent, _getSource } from "../internal/event.js";
 
 // --- debounce ---
 

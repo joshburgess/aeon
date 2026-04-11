@@ -29,7 +29,7 @@ export class DateClock implements Clock {
 
 /** Manually advanceable clock for deterministic testing. */
 export class VirtualClock implements Clock {
-  declare private time: Time;
+  private declare time: Time;
 
   constructor(initialTime: Time = toTime(0)) {
     this.time = initialTime;

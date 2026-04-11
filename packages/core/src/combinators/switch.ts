@@ -57,10 +57,7 @@ class SwitchSink<A, E> implements Sink<Event<A, E>, E> {
     }
 
     this.innerEnded = false;
-    this.innerDisposable = _getSource(innerEvent).run(
-      new SwitchInnerSink(this),
-      this.scheduler,
-    );
+    this.innerDisposable = _getSource(innerEvent).run(new SwitchInnerSink(this), this.scheduler);
   }
 
   error(time: Time, err: E): void {

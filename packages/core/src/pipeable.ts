@@ -14,12 +14,12 @@ import {
   snapshot as snapshotDirect,
 } from "./behavior.js";
 import { chain as chainDirect } from "./combinators/chain.js";
-import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { combine as combineDirect, zip as zipDirect } from "./combinators/combine.js";
 import { constant as constantDirect } from "./combinators/constant.js";
 import { catchError as catchErrorDirect, mapError as mapErrorDirect } from "./combinators/error.js";
 import { filter as filterDirect } from "./combinators/filter.js";
 import { map as mapDirect } from "./combinators/map.js";
+import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { merge as mergeDirect } from "./combinators/merge.js";
 import { mergeMapConcurrently as mergeMapDirect } from "./combinators/mergeMap.js";
 import { scan as scanDirect } from "./combinators/scan.js";
@@ -124,9 +124,8 @@ export const mapAsync =
   <E>(event: Event<A, E>): Event<B, E> =>
     mapAsyncDirect(f, concurrency, event);
 
-export const switchLatest =
-  <A, E>(event: Event<Event<A, E>, E>): Event<A, E> =>
-    switchLatestDirect(event);
+export const switchLatest = <A, E>(event: Event<Event<A, E>, E>): Event<A, E> =>
+  switchLatestDirect(event);
 
 export const until =
   <E>(signal: Event<unknown, E>) =>

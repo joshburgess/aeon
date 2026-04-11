@@ -5,14 +5,7 @@
  * as a structured list of timed entries for assertion.
  */
 
-import type {
-  Disposable,
-  Event as PulseEvent,
-  Scheduler,
-  Sink,
-  Source,
-  Time,
-} from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "@pulse/types";
 
 /** A collected event entry (value, error, or end). */
 export type CollectedEntry<A, E = never> =
@@ -95,10 +88,7 @@ export const collectEvents = <A, E = never>(
  * For events backed by synchronous sources (fromArray, now, empty),
  * all values are available immediately without advancing time.
  */
-export const collectSync = <A>(
-  event: PulseEvent<A, never>,
-  scheduler: Scheduler,
-): A[] => {
+export const collectSync = <A>(event: PulseEvent<A, never>, scheduler: Scheduler): A[] => {
   const result = collectEvents(event, scheduler);
   result.disposable.dispose();
   return result.values;

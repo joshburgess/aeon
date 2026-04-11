@@ -7,6 +7,7 @@
 
 import {
   DURATION_ZERO,
+  type Disposable,
   type Duration,
   type Event,
   type Scheduler,
@@ -14,7 +15,6 @@ import {
   type Source,
   type Time,
   timeAdd,
-  type Disposable,
 } from "@pulse/types";
 import { disposeNone } from "./internal/dispose.js";
 import { _createEvent } from "./internal/event.js";
@@ -123,8 +123,7 @@ export const never = <A>(): Event<A, never> =>
  *
  * Denotation: `[(0, value)]`
  */
-export const now = <A>(value: A): Event<A, never> =>
-  _createEvent(new NowSource(value));
+export const now = <A>(value: A): Event<A, never> => _createEvent(new NowSource(value));
 
 class AtSource<A> implements Source<A, never> {
   declare readonly time: Time;

@@ -3,18 +3,13 @@
  * clean, isolated V8 JIT measurements with proper warmup.
  */
 
-import { fromArray, filter, map, reduce, drain, scan } from "@pulse/core";
+import { drain, filter, fromArray, map, reduce, scan } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
-import {
-  map as mostMap,
-  filter as mostFilter,
-  scan as mostScan,
-  runEffects,
-} from "@most/core";
+import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 const N = 1_000_000;
 const arr = Array.from({ length: N }, (_, i) => i);
@@ -48,10 +43,7 @@ async function benchmarkMost(iterations: number): Promise<number[]> {
   for (let i = 0; i < iterations; i++) {
     const s = newDefaultScheduler();
     const start = performance.now();
-    await runEffects(
-      mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))),
-      s,
-    );
+    await runEffects(mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))), s);
     times.push(performance.now() - start);
   }
   return times;
@@ -123,15 +115,9 @@ async function main() {
   console.log(
     `@most/core: mean=${mostStats.mean.toFixed(3)}ms  min=${mostStats.min.toFixed(3)}ms  p50=${mostStats.p50.toFixed(3)}ms  p95=${mostStats.p95.toFixed(3)}ms  p99=${mostStats.p99.toFixed(3)}ms`,
   );
-  console.log(
-    `\nRatio (mean): @most is ${(pulseStats.mean / mostStats.mean).toFixed(2)}x faster`,
-  );
-  console.log(
-    `Ratio (p50):  @most is ${(pulseStats.p50 / mostStats.p50).toFixed(2)}x faster`,
-  );
-  console.log(
-    `Ratio (min):  @most is ${(pulseStats.min / mostStats.min).toFixed(2)}x faster`,
-  );
+  console.log(`\nRatio (mean): @most is ${(pulseStats.mean / mostStats.mean).toFixed(2)}x faster`);
+  console.log(`Ratio (p50):  @most is ${(pulseStats.p50 / mostStats.p50).toFixed(2)}x faster`);
+  console.log(`Ratio (min):  @most is ${(pulseStats.min / mostStats.min).toFixed(2)}x faster`);
 
   // Also run in reverse order to check for ordering effects
   console.log("\n--- Reverse order (measure @most first, then pulse) ---");
@@ -149,15 +135,9 @@ async function main() {
   console.log(
     `@most/core: mean=${mostStats2.mean.toFixed(3)}ms  min=${mostStats2.min.toFixed(3)}ms  p50=${mostStats2.p50.toFixed(3)}ms  p95=${mostStats2.p95.toFixed(3)}ms`,
   );
-  console.log(
-    `Ratio (mean): @most is ${(pulseStats2.mean / mostStats2.mean).toFixed(2)}x faster`,
-  );
-  console.log(
-    `Ratio (p50):  @most is ${(pulseStats2.p50 / mostStats2.p50).toFixed(2)}x faster`,
-  );
-  console.log(
-    `Ratio (min):  @most is ${(pulseStats2.min / mostStats2.min).toFixed(2)}x faster`,
-  );
+  console.log(`Ratio (mean): @most is ${(pulseStats2.mean / mostStats2.mean).toFixed(2)}x faster`);
+  console.log(`Ratio (p50):  @most is ${(pulseStats2.p50 / mostStats2.p50).toFixed(2)}x faster`);
+  console.log(`Ratio (min):  @most is ${(pulseStats2.min / mostStats2.min).toFixed(2)}x faster`);
 
   // --- Scan benchmark ---
   console.log("\n\n=== scan (1M integers) ===");

@@ -5,14 +5,7 @@
  * so it's visible in debuggers but doesn't affect runtime behavior.
  */
 
-import type {
-  Disposable,
-  Event as PulseEvent,
-  Scheduler,
-  Sink,
-  Source,
-  Time,
-} from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "@pulse/types";
 
 const LABEL_KEY = Symbol("pulse/label");
 

@@ -101,7 +101,12 @@ class MapAsyncSource<A, B, E> implements Source<B, E> {
   }
 
   run(sink: Sink<B, E>, scheduler: Scheduler): Disposable {
-    const state = new MapAsyncState<A, B, E>(this.f, this.concurrency, sink, scheduler.currentTime());
+    const state = new MapAsyncState<A, B, E>(
+      this.f,
+      this.concurrency,
+      sink,
+      scheduler.currentTime(),
+    );
     const outerDisposable = this.source.run(new MapAsyncSink(state), scheduler);
 
     return {
@@ -127,5 +132,4 @@ export const mapAsync = <A, B, E>(
   f: (a: A) => Promise<B>,
   concurrency: number,
   event: Event<A, E>,
-): Event<B, E> =>
-  _createEvent(new MapAsyncSource(f, concurrency, _getSource(event)));
+): Event<B, E> => _createEvent(new MapAsyncSource(f, concurrency, _getSource(event)));

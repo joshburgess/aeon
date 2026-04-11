@@ -25,7 +25,8 @@ export const assertEvents = <A, E>(
   if (actual.length !== expected.length) {
     return {
       pass: false,
-      message: `Expected ${expected.length} entries, got ${actual.length}.\n` +
+      message:
+        `Expected ${expected.length} entries, got ${actual.length}.\n` +
         `  actual:   ${formatEntries(actual)}\n` +
         `  expected: ${formatEntries(expected)}`,
     };
@@ -38,7 +39,8 @@ export const assertEvents = <A, E>(
     if (a.type !== e.type) {
       return {
         pass: false,
-        message: `Entry ${i}: expected type '${e.type}', got '${a.type}'.\n` +
+        message:
+          `Entry ${i}: expected type '${e.type}', got '${a.type}'.\n` +
           `  actual:   ${formatEntry(a)}\n` +
           `  expected: ${formatEntry(e)}`,
       };
@@ -47,7 +49,8 @@ export const assertEvents = <A, E>(
     if ((a.time as number) !== (e.time as number)) {
       return {
         pass: false,
-        message: `Entry ${i}: expected time ${e.time as number}, got ${a.time as number}.\n` +
+        message:
+          `Entry ${i}: expected time ${e.time as number}, got ${a.time as number}.\n` +
           `  actual:   ${formatEntry(a)}\n` +
           `  expected: ${formatEntry(e)}`,
       };
@@ -75,7 +78,9 @@ export const assertEvents = <A, E>(
   return { pass: true };
 };
 
-const formatEntry = (e: CollectedEntry<unknown, unknown> | MarbleEntry<unknown, unknown>): string => {
+const formatEntry = (
+  e: CollectedEntry<unknown, unknown> | MarbleEntry<unknown, unknown>,
+): string => {
   switch (e.type) {
     case "event":
       return `event(${e.time as number}, ${JSON.stringify(e.value)})`;
@@ -86,5 +91,6 @@ const formatEntry = (e: CollectedEntry<unknown, unknown> | MarbleEntry<unknown, 
   }
 };
 
-const formatEntries = (entries: readonly (CollectedEntry<unknown, unknown> | MarbleEntry<unknown, unknown>)[]): string =>
-  `[${entries.map(formatEntry).join(", ")}]`;
+const formatEntries = (
+  entries: readonly (CollectedEntry<unknown, unknown> | MarbleEntry<unknown, unknown>)[],
+): string => `[${entries.map(formatEntry).join(", ")}]`;

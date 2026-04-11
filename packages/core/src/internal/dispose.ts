@@ -17,8 +17,8 @@ export const disposeAll = (disposables: Disposable[]): Disposable => ({
 
 /** A settable disposable — allows replacing the inner disposable. */
 export class SettableDisposable implements Disposable {
-  declare private inner: Disposable | undefined;
-  declare private disposed: boolean;
+  private declare inner: Disposable | undefined;
+  private declare disposed: boolean;
 
   constructor() {
     this.inner = undefined;

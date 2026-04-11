@@ -99,8 +99,15 @@ export const marbleDuration = (marble: string, timeUnit = 1): number => {
 
   for (let i = 0; i < marble.length; i++) {
     const ch = marble[i]!;
-    if (ch === "(") { inGroup = true; continue; }
-    if (ch === ")") { inGroup = false; time += timeUnit; continue; }
+    if (ch === "(") {
+      inGroup = true;
+      continue;
+    }
+    if (ch === ")") {
+      inGroup = false;
+      time += timeUnit;
+      continue;
+    }
     if (ch === " ") continue;
     if (!inGroup) time += timeUnit;
   }

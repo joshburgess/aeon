@@ -8,21 +8,17 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, switchLatest, drain, map } from "@pulse/core";
+import { drain, fromArray, map, switchLatest } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
-import {
-  switchLatest as mostSwitchLatest,
-  map as mostMap,
-  runEffects,
-} from "@most/core";
+import { map as mostMap, switchLatest as mostSwitchLatest, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 // --- RxJS ---
-import { from as rxFrom, switchMap, lastValueFrom } from "rxjs";
+import { lastValueFrom, from as rxFrom, switchMap } from "rxjs";
 
 // --- Helpers ---
 import { range } from "./helpers.js";
@@ -45,10 +41,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
 describe("switchLatest (1000 outer × 100 inner)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
-    await drain(
-      switchLatest(map(() => fromArray(innerArr), fromArray(outerArr))),
-      scheduler,
-    );
+    await drain(switchLatest(map(() => fromArray(innerArr), fromArray(outerArr))), scheduler);
   });
 
   bench("@most/core", async () => {
@@ -60,9 +53,8 @@ describe("switchLatest (1000 outer × 100 inner)", () => {
   });
 
   bench("rxjs", async () => {
-    await lastValueFrom(
-      rxFrom(outerArr).pipe(switchMap(() => rxFrom(innerArr))),
-      { defaultValue: undefined },
-    );
+    await lastValueFrom(rxFrom(outerArr).pipe(switchMap(() => rxFrom(innerArr))), {
+      defaultValue: undefined,
+    });
   });
 });

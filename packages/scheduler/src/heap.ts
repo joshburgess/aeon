@@ -13,7 +13,7 @@ export interface HeapEntry<T> {
 }
 
 export class BinaryHeap<T> {
-  declare private items: HeapEntry<T>[];
+  private declare items: HeapEntry<T>[];
 
   constructor(initialCapacity = 64) {
     this.items = [];

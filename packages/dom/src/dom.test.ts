@@ -1,5 +1,5 @@
-import type { Disposable, Sink, Source, Time } from "@pulse/types";
 import { VirtualScheduler } from "@pulse/scheduler";
+import type { Disposable, Sink, Source, Time } from "@pulse/types";
 import { describe, expect, it } from "vitest";
 import { fromDOMEvent } from "./events.js";
 
@@ -59,7 +59,9 @@ describe("fromDOMEvent", () => {
     const values: Event[] = [];
     getSource<Event, never>(stream).run(
       {
-        event(_t: Time, v: Event) { values.push(v); },
+        event(_t: Time, v: Event) {
+          values.push(v);
+        },
         error() {},
         end() {},
       },
@@ -99,7 +101,9 @@ describe("fromDOMEvent", () => {
     const values: Event[] = [];
     const disposable = getSource<Event, never>(stream).run(
       {
-        event(_t: Time, v: Event) { values.push(v); },
+        event(_t: Time, v: Event) {
+          values.push(v);
+        },
         error() {},
         end() {},
       },
@@ -124,11 +128,23 @@ describe("fromDOMEvent", () => {
     const source = getSource<Event, never>(stream);
 
     const d1 = source.run(
-      { event(_t: Time, v: Event) { values1.push(v); }, error() {}, end() {} },
+      {
+        event(_t: Time, v: Event) {
+          values1.push(v);
+        },
+        error() {},
+        end() {},
+      },
       scheduler,
     );
     const d2 = source.run(
-      { event(_t: Time, v: Event) { values2.push(v); }, error() {}, end() {} },
+      {
+        event(_t: Time, v: Event) {
+          values2.push(v);
+        },
+        error() {},
+        end() {},
+      },
       scheduler,
     );
 

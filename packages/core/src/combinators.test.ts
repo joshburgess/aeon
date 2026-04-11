@@ -6,8 +6,8 @@ import { constant } from "./combinators/constant.js";
 import { catchError, mapError, throwError } from "./combinators/error.js";
 import { filter } from "./combinators/filter.js";
 import { map } from "./combinators/map.js";
-import { merge } from "./combinators/merge.js";
 import { mapAsync } from "./combinators/mapAsync.js";
+import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
 import { scan } from "./combinators/scan.js";
 import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
@@ -223,13 +223,21 @@ describe("until", () => {
       run(sink) {
         pushMain = (t, v) => sink.event(t, v);
         endMain = (t) => sink.end(t);
-        return { dispose() { pushMain = undefined; } };
+        return {
+          dispose() {
+            pushMain = undefined;
+          },
+        };
       },
     });
     const signal = _createEvent<unknown, never>({
       run(sink) {
         pushSignal = (t) => sink.event(t, undefined);
-        return { dispose() { pushSignal = undefined; } };
+        return {
+          dispose() {
+            pushSignal = undefined;
+          },
+        };
       },
     });
 
@@ -237,9 +245,13 @@ describe("until", () => {
     let ended = false;
     _getSource(until(signal, main)).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
-        end() { ended = true; },
+        end() {
+          ended = true;
+        },
       },
       scheduler,
     );
@@ -266,7 +278,11 @@ describe("until", () => {
       run(sink) {
         pushMain = (t, v) => sink.event(t, v);
         endMain = (t) => sink.end(t);
-        return { dispose() { pushMain = undefined; } };
+        return {
+          dispose() {
+            pushMain = undefined;
+          },
+        };
       },
     });
     const signal = _createEvent<unknown, never>({
@@ -279,9 +295,13 @@ describe("until", () => {
     let ended = false;
     _getSource(until(signal, main)).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
-        end() { ended = true; },
+        end() {
+          ended = true;
+        },
       },
       scheduler,
     );
@@ -304,13 +324,21 @@ describe("since", () => {
       run(sink) {
         pushMain = (t, v) => sink.event(t, v);
         endMain = (t) => sink.end(t);
-        return { dispose() { pushMain = undefined; } };
+        return {
+          dispose() {
+            pushMain = undefined;
+          },
+        };
       },
     });
     const signal = _createEvent<unknown, never>({
       run(sink) {
         pushSignal = (t) => sink.event(t, undefined);
-        return { dispose() { pushSignal = undefined; } };
+        return {
+          dispose() {
+            pushSignal = undefined;
+          },
+        };
       },
     });
 
@@ -318,9 +346,13 @@ describe("since", () => {
     let ended = false;
     _getSource(since(signal, main)).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
-        end() { ended = true; },
+        end() {
+          ended = true;
+        },
       },
       scheduler,
     );
@@ -347,20 +379,30 @@ describe("since", () => {
     const main = _createEvent<number, never>({
       run(sink) {
         pushMain = (t, v) => sink.event(t, v);
-        return { dispose() { pushMain = undefined; } };
+        return {
+          dispose() {
+            pushMain = undefined;
+          },
+        };
       },
     });
     const signal = _createEvent<unknown, never>({
       run(sink) {
         pushSignal = (t) => sink.event(t, undefined);
-        return { dispose() { pushSignal = undefined; } };
+        return {
+          dispose() {
+            pushSignal = undefined;
+          },
+        };
       },
     });
 
     const values: number[] = [];
     _getSource(since(signal, main)).run(
       {
-        event(_t: Time, v: number) { values.push(v); },
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
         error() {},
         end() {},
       },
@@ -594,18 +636,18 @@ describe("mapAsync", () => {
     const event = fromArray([1, 2, 3]);
     const result: number[] = [];
 
-    const mapped = mapAsync(
-      async (x: number) => x * 10,
-      Infinity,
-      event,
-    );
+    const mapped = mapAsync(async (x: number) => x * 10, Number.POSITIVE_INFINITY, event);
 
     await new Promise<void>((resolve) => {
       _getSource(mapped).run(
         {
-          event(_t: Time, v: number) { result.push(v); },
+          event(_t: Time, v: number) {
+            result.push(v);
+          },
           error() {},
-          end() { resolve(); },
+          end() {
+            resolve();
+          },
         },
         scheduler,
       );
@@ -639,9 +681,13 @@ describe("mapAsync", () => {
     const done = new Promise<void>((resolve) => {
       _getSource(mapped).run(
         {
-          event(_t: Time, v: number) { result.push(v); },
+          event(_t: Time, v: number) {
+            result.push(v);
+          },
           error() {},
-          end() { resolve(); },
+          end() {
+            resolve();
+          },
         },
         scheduler,
       );
@@ -670,7 +716,9 @@ describe("mapAsync", () => {
     const scheduler = new TestScheduler();
     const event = fromArray([1]);
     const mapped = mapAsync(
-      async (_x: number) => { throw new Error("boom"); },
+      async (_x: number) => {
+        throw new Error("boom");
+      },
       1,
       event,
     );
@@ -679,7 +727,9 @@ describe("mapAsync", () => {
       _getSource(mapped).run(
         {
           event() {},
-          error(_t: Time, err: unknown) { resolve(err); },
+          error(_t: Time, err: unknown) {
+            resolve(err);
+          },
           end() {},
         },
         scheduler,

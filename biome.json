@@ -11,7 +11,12 @@
         "noExplicitAny": "error"
       },
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "useLiteralKeys": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "off"
       }
     }
   },
@@ -23,5 +28,17 @@
   },
   "files": {
     "ignore": ["**/dist/**", "**/node_modules/**", "**/*.d.ts"]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["benchmarks/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
 }

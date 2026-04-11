@@ -9,7 +9,7 @@
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
 import { disposeAll, disposeNone } from "../internal/dispose.js";
-import { _createEvent, _getSource } from "../internal/event.js";
+import { type SyncSource, _createEvent, _getSource } from "../internal/event.js";
 
 class MergeSink<A, E> implements Sink<A, E> {
   declare readonly sink: Sink<A, E>;
@@ -44,7 +44,7 @@ class MergeSource<A, E> implements Source<A, E> {
     this.sources = sources;
     let sync = true;
     for (let i = 0; i < sources.length; i++) {
-      if ((sources[i] as any)._sync !== true) {
+      if ((sources[i] as SyncSource<A, E>)._sync !== true) {
         sync = false;
         break;
       }
@@ -70,7 +70,7 @@ class MergeSource<A, E> implements Source<A, E> {
       return active;
     };
     for (let i = 0; i < sources.length && active; i++) {
-      (sources[i]! as any).syncIterate(wrappedEmit);
+      (sources[i]! as SyncSource<A, E>).syncIterate(wrappedEmit);
     }
   }
 }

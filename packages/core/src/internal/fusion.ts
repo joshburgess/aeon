@@ -11,9 +11,9 @@
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
-import { _EmptySource, _NowSource, _EMPTY_SOURCE } from "../constructors.js";
-import { _createEvent, _getSource } from "./event.js";
+import { _EMPTY_SOURCE, _EmptySource, _NowSource } from "../constructors.js";
 import { Pipe } from "./Pipe.js";
+import { _createEvent, _getSource } from "./event.js";
 
 // --- Sink classes ---
 
@@ -166,10 +166,7 @@ class FilterSource<A, E> implements Source<A, E> {
     // filter(p, filter(q, s)) → filter(x => q(x) && p(x), s)
     if (source instanceof FilterSource) {
       const inner = source as FilterSource<A, E>;
-      return new FilterSource(
-        (x: A) => inner.predicate(x) && predicate(x),
-        inner.source,
-      );
+      return new FilterSource((x: A) => inner.predicate(x) && predicate(x), inner.source);
     }
 
     // filter(p, map(f, s)) → mapFilter(f, p, s)

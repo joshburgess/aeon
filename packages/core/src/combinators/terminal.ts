@@ -9,7 +9,7 @@
  */
 
 import { DURATION_ZERO, type Event, type Scheduler, type Sink, type Time } from "@pulse/types";
-import { _getSource } from "../internal/event.js";
+import { _getSource, isSyncSource } from "../internal/event.js";
 
 // --- Sink classes for V8 monomorphism ---
 
@@ -19,7 +19,12 @@ class ReduceSink<A, B, E> implements Sink<A, E> {
   declare readonly resolve: (value: B) => void;
   declare readonly reject: (err: E) => void;
 
-  constructor(f: (acc: B, a: A) => B, seed: B, resolve: (value: B) => void, reject: (err: E) => void) {
+  constructor(
+    f: (acc: B, a: A) => B,
+    seed: B,
+    resolve: (value: B) => void,
+    reject: (err: E) => void,
+  ) {
     this.f = f;
     this.acc = seed;
     this.resolve = resolve;
@@ -103,10 +108,10 @@ export const reduce = <A, B, E>(
 ): Promise<B> => {
   const source = _getSource(event);
 
-  if ((source as any)._sync === true) {
+  if (isSyncSource(source)) {
     try {
       let acc = seed;
-      (source as any).syncIterate((value: A) => {
+      source.syncIterate((value: A) => {
         acc = f(acc, value);
         return true;
       });
@@ -133,9 +138,9 @@ export const observe = <A, E>(
 ): Promise<void> => {
   const source = _getSource(event);
 
-  if ((source as any)._sync === true) {
+  if (isSyncSource(source)) {
     try {
-      (source as any).syncIterate((value: A) => {
+      source.syncIterate((value: A) => {
         f(value);
         return true;
       });
@@ -158,9 +163,9 @@ export const observe = <A, E>(
 export const drain = <A, E>(event: Event<A, E>, scheduler: Scheduler): Promise<void> => {
   const source = _getSource(event);
 
-  if ((source as any)._sync === true) {
+  if (isSyncSource(source)) {
     try {
-      (source as any).syncIterate(() => true);
+      source.syncIterate(() => true);
       return Promise.resolve();
     } catch (err) {
       return Promise.reject(err);

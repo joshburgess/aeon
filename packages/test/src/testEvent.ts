@@ -36,8 +36,12 @@ class MarbleSource<A, E> implements Source<A, E> {
           const value = entry.value;
           disposables.push(
             scheduler.scheduleTask(delay, {
-              run(t: Time) { sink.event(t, value); },
-              error(t: Time, err: unknown) { sink.error(t, err as E); },
+              run(t: Time) {
+                sink.event(t, value);
+              },
+              error(t: Time, err: unknown) {
+                sink.error(t, err as E);
+              },
               dispose() {},
             }),
           );
@@ -47,7 +51,9 @@ class MarbleSource<A, E> implements Source<A, E> {
           const error = entry.error;
           disposables.push(
             scheduler.scheduleTask(delay, {
-              run(t: Time) { sink.error(t, error); },
+              run(t: Time) {
+                sink.error(t, error);
+              },
               error() {},
               dispose() {},
             }),
@@ -57,7 +63,9 @@ class MarbleSource<A, E> implements Source<A, E> {
         case "end": {
           disposables.push(
             scheduler.scheduleTask(delay, {
-              run(t: Time) { sink.end(t); },
+              run(t: Time) {
+                sink.end(t);
+              },
               error() {},
               dispose() {},
             }),

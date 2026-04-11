@@ -7,17 +7,17 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, chain, drain } from "@pulse/core";
+import { chain, drain, fromArray } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
 import { chain as mostChain, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 // --- RxJS ---
-import { from as rxFrom, mergeMap, EMPTY as rxEmpty, lastValueFrom } from "rxjs";
+import { lastValueFrom, mergeMap, EMPTY as rxEmpty, from as rxFrom } from "rxjs";
 
 // --- Helpers ---
 import { range } from "./helpers.js";
@@ -55,11 +55,8 @@ describe("flatMap (1000 × 1000)", () => {
   });
 
   bench("rxjs", async () => {
-    await lastValueFrom(
-      rxFrom(outerArr).pipe(
-        mergeMap(() => rxFrom(innerArr), 1),
-      ),
-      { defaultValue: undefined },
-    );
+    await lastValueFrom(rxFrom(outerArr).pipe(mergeMap(() => rxFrom(innerArr), 1)), {
+      defaultValue: undefined,
+    });
   });
 });

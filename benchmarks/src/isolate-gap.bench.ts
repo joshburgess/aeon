@@ -5,18 +5,13 @@
 
 import { bench, describe } from "vitest";
 
-import { fromArray, filter, map, reduce, drain } from "@pulse/core";
+import { drain, filter, fromArray, map, reduce } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
-import {
-  map as mostMap,
-  filter as mostFilter,
-  scan as mostScan,
-  runEffects,
-} from "@most/core";
+import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 const N = 1_000_000;
 const arr = Array.from({ length: N }, (_, i) => i);
@@ -50,10 +45,7 @@ describe("H1: scheduler reuse vs creation", () => {
 
   bench("@most/core (new scheduler each time)", async () => {
     const s = newDefaultScheduler();
-    await runEffects(
-      mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))),
-      s,
-    );
+    await runEffects(mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))), s);
   });
 });
 

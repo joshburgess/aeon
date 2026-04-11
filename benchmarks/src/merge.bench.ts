@@ -8,17 +8,17 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, merge, drain } from "@pulse/core";
+import { drain, fromArray, merge } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
 import { mergeArray as mostMergeArray, runEffects } from "@most/core";
+import { newStream } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 // --- RxJS ---
-import { from as rxFrom, merge as rxMerge, lastValueFrom } from "rxjs";
+import { lastValueFrom, from as rxFrom, merge as rxMerge } from "rxjs";
 
 // --- Helpers ---
 import { range } from "./helpers.js";

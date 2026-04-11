@@ -6,8 +6,8 @@
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
-import { _createEvent, _getSource } from "../internal/event.js";
 import { Pipe } from "../internal/Pipe.js";
+import { _createEvent, _getSource } from "../internal/event.js";
 
 class TapSink<A, E> extends Pipe<A, E> {
   declare readonly f: (a: A) => void;

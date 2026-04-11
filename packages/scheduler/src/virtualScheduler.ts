@@ -28,8 +28,8 @@ interface PendingTask {
 }
 
 export class VirtualScheduler implements Scheduler {
-  declare private readonly clock: VirtualClock;
-  declare private readonly heap: BinaryHeap<PendingTask>;
+  private declare readonly clock: VirtualClock;
+  private declare readonly heap: BinaryHeap<PendingTask>;
 
   constructor(initialTime: Time = TIME_ZERO) {
     this.clock = new VirtualClock(initialTime);
@@ -120,8 +120,8 @@ export class VirtualScheduler implements Scheduler {
 }
 
 class VirtualRelativeScheduler implements Scheduler {
-  declare private readonly offset: Offset;
-  declare private readonly parent: VirtualScheduler;
+  private declare readonly offset: Offset;
+  private declare readonly parent: VirtualScheduler;
 
   constructor(offset: Offset, parent: VirtualScheduler) {
     this.offset = offset;

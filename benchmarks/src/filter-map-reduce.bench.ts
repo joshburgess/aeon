@@ -8,20 +8,21 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { fromArray, filter, map, reduce, drain, scan } from "@pulse/core";
+import { drain, filter, fromArray, map, reduce, scan } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
 
 // --- @most/core ---
-import {
-  map as mostMap,
-  filter as mostFilter,
-  scan as mostScan,
-  runEffects,
-} from "@most/core";
+import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
 import { newDefaultScheduler } from "@most/scheduler";
 
 // --- RxJS ---
-import { from as rxFrom, filter as rxFilter, map as rxMap, reduce as rxReduce, lastValueFrom } from "rxjs";
+import {
+  lastValueFrom,
+  filter as rxFilter,
+  from as rxFrom,
+  map as rxMap,
+  reduce as rxReduce,
+} from "rxjs";
 
 // --- Helpers ---
 import { add, double, isEven, range } from "./helpers.js";
@@ -32,12 +33,7 @@ const arr = range(N);
 describe("filter → map → reduce (1M integers)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
-    await reduce(
-      add,
-      0,
-      map(double, filter(isEven, fromArray(arr))),
-      scheduler,
-    );
+    await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), scheduler);
   });
 
   bench("@most/core", async () => {
@@ -49,13 +45,7 @@ describe("filter → map → reduce (1M integers)", () => {
   });
 
   bench("rxjs", async () => {
-    await lastValueFrom(
-      rxFrom(arr).pipe(
-        rxFilter(isEven),
-        rxMap(double),
-        rxReduce(add, 0),
-      ),
-    );
+    await lastValueFrom(rxFrom(arr).pipe(rxFilter(isEven), rxMap(double), rxReduce(add, 0)));
   });
 
   bench("native array", () => {
@@ -63,9 +53,9 @@ describe("filter → map → reduce (1M integers)", () => {
   });
 });
 
+import { newStream } from "@most/core";
 // --- @most/core fromArray helper (inline to avoid import issues) ---
 import type { Stream } from "@most/types";
-import { newStream } from "@most/core";
 
 const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   newStream((sink, scheduler) => {

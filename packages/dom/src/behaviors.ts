@@ -6,10 +6,10 @@
  * they subscribe to DOM events internally.
  */
 
-import type { Behavior, Disposable, Scheduler } from "@pulse/types";
 import { stepper } from "@pulse/core";
-import { fromDOMEvent } from "./events.js";
 import { map } from "@pulse/core";
+import type { Behavior, Disposable, Scheduler } from "@pulse/types";
+import { fromDOMEvent } from "./events.js";
 
 /** 2D point for mouse coordinates. */
 export interface Point {
@@ -50,12 +50,11 @@ export const mousePosition = (
  * Push-updated from resize events on window.
  * Returns [Behavior, Disposable] — dispose to stop listening.
  */
-export const windowSize = (
-  scheduler: Scheduler,
-): [Behavior<Size, never>, Disposable] => {
-  const initial: Size = typeof window !== "undefined"
-    ? { width: window.innerWidth, height: window.innerHeight }
-    : { width: 0, height: 0 };
+export const windowSize = (scheduler: Scheduler): [Behavior<Size, never>, Disposable] => {
+  const initial: Size =
+    typeof window !== "undefined"
+      ? { width: window.innerWidth, height: window.innerHeight }
+      : { width: 0, height: 0 };
 
   const resizes = map(
     () => ({ width: window.innerWidth, height: window.innerHeight }),

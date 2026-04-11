@@ -11,6 +11,16 @@
 
 import type { Disposable, Event, Scheduler, Sink, Source } from "@pulse/types";
 
+/** A Source that supports synchronous iteration (sync loop compilation). */
+export interface SyncSource<A, E = never> extends Source<A, E> {
+  readonly _sync: boolean;
+  syncIterate(emit: (value: A) => boolean): void;
+}
+
+/** Type guard: does this source support sync iteration? */
+export const isSyncSource = <A, E>(source: Source<A, E>): source is SyncSource<A, E> =>
+  (source as SyncSource<A, E>)._sync === true;
+
 /** Create an opaque Event from a Source. Zero-cost identity cast. */
 export const _createEvent = <A, E = never>(source: Source<A, E>): Event<A, E> =>
   source as unknown as Event<A, E>;

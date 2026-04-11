@@ -70,7 +70,12 @@ class MergeMapState<A, B, E> {
   declare outerEnded: boolean;
   declare disposed: boolean;
 
-  constructor(f: (a: A) => Event<B, E>, concurrency: number, sink: Sink<B, E>, scheduler: Scheduler) {
+  constructor(
+    f: (a: A) => Event<B, E>,
+    concurrency: number,
+    sink: Sink<B, E>,
+    scheduler: Scheduler,
+  ) {
     this.f = f;
     this.concurrency = concurrency;
     this.sink = sink;
@@ -89,7 +94,10 @@ class MergeMapState<A, B, E> {
 
       const innerSource = _getSource(this.f(value));
       this.innerDisposables.push(
-        innerSource.run(new MergeMapInnerSink<B, E>(this as MergeMapState<unknown, B, E>), this.scheduler),
+        innerSource.run(
+          new MergeMapInnerSink<B, E>(this as MergeMapState<unknown, B, E>),
+          this.scheduler,
+        ),
       );
     }
   }
@@ -133,5 +141,4 @@ export const mergeMapConcurrently = <A, B, E>(
   f: (a: A) => Event<B, E>,
   concurrency: number,
   event: Event<A, E>,
-): Event<B, E> =>
-  _createEvent(new MergeMapSource(f, concurrency, _getSource(event)));
+): Event<B, E> => _createEvent(new MergeMapSource(f, concurrency, _getSource(event)));

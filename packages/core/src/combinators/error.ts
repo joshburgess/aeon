@@ -71,8 +71,7 @@ class CatchSource<A, E1, E2> implements Source<A, E2> {
 export const catchError = <A, E1, E2>(
   handler: (err: E1) => Event<A, E2>,
   event: Event<A, E1>,
-): Event<A, E2> =>
-  _createEvent(new CatchSource(handler, _getSource(event)));
+): Event<A, E2> => _createEvent(new CatchSource(handler, _getSource(event)));
 
 // --- mapError ---
 
@@ -141,5 +140,4 @@ class ThrowErrorSource<A, E> implements Source<A, E> {
  *
  * Denotation: `Error(err)` — a failed event sequence.
  */
-export const throwError = <A, E>(err: E): Event<A, E> =>
-  _createEvent(new ThrowErrorSource(err));
+export const throwError = <A, E>(err: E): Event<A, E> => _createEvent(new ThrowErrorSource(err));

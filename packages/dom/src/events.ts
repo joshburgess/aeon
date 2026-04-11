@@ -4,13 +4,7 @@
  * Creates pulse Event streams from DOM EventTarget events.
  */
 
-import type {
-  Disposable,
-  Event as PulseEvent,
-  Scheduler,
-  Sink,
-  Source,
-} from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source } from "@pulse/types";
 import { createEvent } from "./internal.js";
 
 class DOMEventSource<E extends Event> implements Source<E, never> {

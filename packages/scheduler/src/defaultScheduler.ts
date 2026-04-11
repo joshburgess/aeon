@@ -29,10 +29,10 @@ interface PendingTask {
 }
 
 export class DefaultScheduler implements Scheduler {
-  declare private readonly clock: Clock;
-  declare private readonly heap: BinaryHeap<PendingTask>;
-  declare private microtaskQueued: boolean;
-  declare private readonly microtaskBuffer: PendingTask[];
+  private declare readonly clock: Clock;
+  private declare readonly heap: BinaryHeap<PendingTask>;
+  private declare microtaskQueued: boolean;
+  private declare readonly microtaskBuffer: PendingTask[];
 
   constructor(clock: Clock = new PerformanceClock()) {
     this.clock = clock;
@@ -120,8 +120,8 @@ export class DefaultScheduler implements Scheduler {
 }
 
 class RelativeScheduler implements Scheduler {
-  declare private readonly offset: Offset;
-  declare private readonly parent: Scheduler;
+  private declare readonly offset: Offset;
+  private declare readonly parent: Scheduler;
 
   constructor(offset: Offset, parent: Scheduler) {
     this.offset = offset;

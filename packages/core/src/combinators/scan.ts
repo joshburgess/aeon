@@ -7,10 +7,10 @@
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
-import { _EmptySource, _EMPTY_SOURCE } from "../constructors.js";
-import { _createEvent, _getSource } from "../internal/event.js";
-import { _MapSource } from "../internal/fusion.js";
+import { _EMPTY_SOURCE, _EmptySource } from "../constructors.js";
 import { Pipe } from "../internal/Pipe.js";
+import { type SyncSource, _createEvent, _getSource } from "../internal/event.js";
+import { _MapSource } from "../internal/fusion.js";
 
 class ScanSink<A, B, E> extends Pipe<B, E> implements Sink<A, E> {
   declare readonly f: (acc: B, a: A) => B;
@@ -40,7 +40,7 @@ class ScanSource<A, B, E> implements Source<B, E> {
     this.f = f;
     this.seed = seed;
     this.source = source;
-    this._sync = (source as any)._sync === true;
+    this._sync = (source as SyncSource<A, E>)._sync === true;
   }
 
   run(sink: Sink<B, E>, scheduler: Scheduler): Disposable {
@@ -50,7 +50,7 @@ class ScanSource<A, B, E> implements Source<B, E> {
   syncIterate(emit: (value: B) => boolean): void {
     const f = this.f;
     let acc = this.seed;
-    (this.source as any).syncIterate((v: A) => {
+    (this.source as SyncSource<A, E>).syncIterate((v: A) => {
       acc = f(acc, v);
       return emit(acc);
     });
@@ -72,10 +72,14 @@ export const scan = <A, B, E>(f: (acc: B, a: A) => B, seed: B, event: Event<A, E
 
   // scan(f, seed, map(g, s)) → scan((acc, x) => f(acc, g(x)), seed, s)
   if (source instanceof _MapSource) {
-    const inner = source as InstanceType<typeof _MapSource<unknown, A, any>>;
+    const inner = source as InstanceType<typeof _MapSource<unknown, A, E>>;
     const g = inner.f;
     return _createEvent(
-      new ScanSource((acc: B, x: unknown) => f(acc, g(x) as A), seed, inner.source as Source<unknown, E>),
+      new ScanSource(
+        (acc: B, x: unknown) => f(acc, g(x) as A),
+        seed,
+        inner.source as Source<unknown, E>,
+      ),
     );
   }
 

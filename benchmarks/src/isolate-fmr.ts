@@ -1,11 +1,11 @@
+import { filter as mFilter, map as mMap, scan as mScan, newStream, runEffects } from "@most/core";
+import { newDefaultScheduler } from "@most/scheduler";
+import type { Stream } from "@most/types";
 /**
  * Diagnostic: isolate the filter-map-reduce gap.
  */
-import { fromArray, filter, map, reduce, drain, scan } from "@pulse/core";
+import { drain, filter, fromArray, map, reduce, scan } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
-import { map as mMap, filter as mFilter, scan as mScan, runEffects, newStream } from "@most/core";
-import { newDefaultScheduler } from "@most/scheduler";
-import type { Stream } from "@most/types";
 
 const N = 1_000_000;
 const arr = Array.from({ length: N }, (_, i) => i);
@@ -43,15 +43,20 @@ async function main() {
     const mostTime = performance.now() - t1;
 
     console.log(`Scheduler creation (${SCHED_ITER}x):`);
-    console.log(`  VirtualScheduler:    ${pulseTime.toFixed(1)}ms  (${(pulseTime / SCHED_ITER * 1000).toFixed(1)}µs each)`);
-    console.log(`  newDefaultScheduler: ${mostTime.toFixed(1)}ms  (${(mostTime / SCHED_ITER * 1000).toFixed(1)}µs each)`);
+    console.log(
+      `  VirtualScheduler:    ${pulseTime.toFixed(1)}ms  (${((pulseTime / SCHED_ITER) * 1000).toFixed(1)}µs each)`,
+    );
+    console.log(
+      `  newDefaultScheduler: ${mostTime.toFixed(1)}ms  (${((mostTime / SCHED_ITER) * 1000).toFixed(1)}µs each)`,
+    );
     console.log();
   }
 
   // Test 2: Shared scheduler — isolate construction+hot-path from scheduler creation
   {
     const vs = new VirtualScheduler();
-    for (let i = 0; i < WARMUP; i++) await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), vs);
+    for (let i = 0; i < WARMUP; i++)
+      await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), vs);
     const pt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
@@ -60,7 +65,8 @@ async function main() {
     }
 
     const ms = newDefaultScheduler();
-    for (let i = 0; i < WARMUP; i++) await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), ms);
+    for (let i = 0; i < WARMUP; i++)
+      await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), ms);
     const mt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
@@ -68,18 +74,22 @@ async function main() {
       mt.push(performance.now() - s);
     }
 
-    const pm = stats(pt), mm = stats(mt);
+    const pm = stats(pt);
+    const mm = stats(mt);
     const ratio = pm / mm;
-    console.log(`Shared scheduler (reduce vs scan+runEffects):`);
+    console.log("Shared scheduler (reduce vs scan+runEffects):");
     console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`);
-    console.log(`  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`);
+    console.log(
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+    );
     console.log();
   }
 
   // Test 3: Apples-to-apples — both use scan+drain/runEffects (same # of sinks)
   {
     const vs = new VirtualScheduler();
-    for (let i = 0; i < WARMUP; i++) await drain(scan(add, 0, map(double, filter(isEven, fromArray(arr)))), vs);
+    for (let i = 0; i < WARMUP; i++)
+      await drain(scan(add, 0, map(double, filter(isEven, fromArray(arr)))), vs);
     const pt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
@@ -88,7 +98,8 @@ async function main() {
     }
 
     const ms = newDefaultScheduler();
-    for (let i = 0; i < WARMUP; i++) await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), ms);
+    for (let i = 0; i < WARMUP; i++)
+      await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), ms);
     const mt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
@@ -96,37 +107,57 @@ async function main() {
       mt.push(performance.now() - s);
     }
 
-    const pm = stats(pt), mm = stats(mt);
+    const pm = stats(pt);
+    const mm = stats(mt);
     const ratio = pm / mm;
-    console.log(`Apples-to-apples scan+drain (shared scheduler):`);
+    console.log("Apples-to-apples scan+drain (shared scheduler):");
     console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`);
-    console.log(`  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`);
+    console.log(
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+    );
     console.log();
   }
 
   // Test 4: New scheduler each time — but apples-to-apples (scan+drain)
   {
-    for (let i = 0; i < WARMUP; i++) await drain(scan(add, 0, map(double, filter(isEven, fromArray(arr)))), new VirtualScheduler());
+    for (let i = 0; i < WARMUP; i++)
+      await drain(
+        scan(add, 0, map(double, filter(isEven, fromArray(arr)))),
+        new VirtualScheduler(),
+      );
     const pt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
-      await drain(scan(add, 0, map(double, filter(isEven, fromArray(arr)))), new VirtualScheduler());
+      await drain(
+        scan(add, 0, map(double, filter(isEven, fromArray(arr)))),
+        new VirtualScheduler(),
+      );
       pt.push(performance.now() - s);
     }
 
-    for (let i = 0; i < WARMUP; i++) await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), newDefaultScheduler());
+    for (let i = 0; i < WARMUP; i++)
+      await runEffects(
+        mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))),
+        newDefaultScheduler(),
+      );
     const mt: number[] = [];
     for (let i = 0; i < ITER; i++) {
       const s = performance.now();
-      await runEffects(mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))), newDefaultScheduler());
+      await runEffects(
+        mScan(add, 0, mMap(double, mFilter(isEven, mostFromArray(arr)))),
+        newDefaultScheduler(),
+      );
       mt.push(performance.now() - s);
     }
 
-    const pm = stats(pt), mm = stats(mt);
+    const pm = stats(pt);
+    const mm = stats(mt);
     const ratio = pm / mm;
-    console.log(`New scheduler each time, scan+drain:`);
+    console.log("New scheduler each time, scan+drain:");
     console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`);
-    console.log(`  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`);
+    console.log(
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+    );
   }
 }
 

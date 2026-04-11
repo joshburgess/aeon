@@ -8,6 +8,8 @@
  */
 
 import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
+import { toAsyncIterator } from "./asyncIterator.js";
+import { sample, snapshot } from "./behavior.js";
 import { chain } from "./combinators/chain.js";
 import { combine, zip } from "./combinators/combine.js";
 import { constant } from "./combinators/constant.js";
@@ -18,28 +20,12 @@ import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
 import { mergeMapConcurrently } from "./combinators/mergeMap.js";
 import { scan } from "./combinators/scan.js";
-import {
-  since,
-  skip,
-  skipWhile,
-  slice,
-  take,
-  takeWhile,
-  until,
-} from "./combinators/slice.js";
+import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
-import {
-  bufferCount,
-  bufferTime,
-  debounce,
-  delay,
-  throttle,
-} from "./combinators/time.js";
-import { sample, snapshot } from "./behavior.js";
+import { bufferCount, bufferTime, debounce, delay, throttle } from "./combinators/time.js";
 import { multicast } from "./multicast.js";
-import { toAsyncIterator } from "./asyncIterator.js";
 
 /**
  * Chainable wrapper around a pulse Event.
@@ -213,5 +199,4 @@ export class FluentEvent<A, E> {
  * // result === 60
  * ```
  */
-export const fluent = <A, E>(event: Event<A, E>): FluentEvent<A, E> =>
-  new FluentEvent(event);
+export const fluent = <A, E>(event: Event<A, E>): FluentEvent<A, E> => new FluentEvent(event);

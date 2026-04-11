@@ -8,10 +8,10 @@
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
-import { _EmptySource, _EMPTY_SOURCE } from "../constructors.js";
-import { SettableDisposable, disposeAll, disposeNone } from "../internal/dispose.js";
-import { _createEvent, _getSource } from "../internal/event.js";
+import { _EMPTY_SOURCE, _EmptySource } from "../constructors.js";
 import { Pipe } from "../internal/Pipe.js";
+import { SettableDisposable, disposeAll, disposeNone } from "../internal/dispose.js";
+import { type SyncSource, _createEvent, _getSource } from "../internal/event.js";
 
 // --- take ---
 
@@ -44,7 +44,7 @@ class TakeSource<A, E> implements Source<A, E> {
   constructor(n: number, source: Source<A, E>) {
     this.n = n;
     this.source = source;
-    this._sync = (source as any)._sync === true;
+    this._sync = (source as SyncSource<A, E>)._sync === true;
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
@@ -55,7 +55,7 @@ class TakeSource<A, E> implements Source<A, E> {
 
   syncIterate(emit: (value: A) => boolean): void {
     let remaining = this.n;
-    (this.source as any).syncIterate((v: A) => {
+    (this.source as SyncSource<A, E>).syncIterate((v: A) => {
       if (remaining <= 0) return false;
       remaining--;
       return emit(v) && remaining > 0;
@@ -127,7 +127,7 @@ class SkipSource<A, E> implements Source<A, E> {
   constructor(n: number, source: Source<A, E>) {
     this.n = n;
     this.source = source;
-    this._sync = (source as any)._sync === true;
+    this._sync = (source as SyncSource<A, E>)._sync === true;
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
@@ -136,7 +136,7 @@ class SkipSource<A, E> implements Source<A, E> {
 
   syncIterate(emit: (value: A) => boolean): void {
     let remaining = this.n;
-    (this.source as any).syncIterate((v: A) => {
+    (this.source as SyncSource<A, E>).syncIterate((v: A) => {
       if (remaining > 0) {
         remaining--;
         return true;

@@ -32,11 +32,11 @@ ES5ReduceSink.prototype.event = function (_t: number, v: number): void {
   const f = this.f;
   this.acc = f(this.acc, v);
 };
-ES5ReduceSink.prototype.end = function (_t: number): void {};
+ES5ReduceSink.prototype.end = (_t: number): void => {};
 
 // --- Variant 3: ES2022 class WITHOUT field declarations ---
 // In JS, you can skip field declarations — properties are set in constructor only
-const ClassNoFieldsReduceSink = (function () {
+const ClassNoFieldsReduceSink = (() => {
   // We use eval-free class creation to avoid field declarations
   class _Sink implements SimpleSink {
     // No field declarations! Properties only set in constructor.
@@ -69,7 +69,10 @@ class ClassWithFieldsReduceSink implements SimpleSink {
 }
 
 // --- Variant 5: Plain object literal (not closure) ---
-function makeObjectLiteralSink(f: (a: number, b: number) => number, seed: number): SimpleSink & { acc: number } {
+function makeObjectLiteralSink(
+  f: (a: number, b: number) => number,
+  seed: number,
+): SimpleSink & { acc: number } {
   return {
     acc: seed,
     event(_t: number, v: number): void {

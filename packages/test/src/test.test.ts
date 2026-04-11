@@ -1,11 +1,11 @@
-import { toDuration, toTime } from "@pulse/types";
+import { filter, fromArray, map, merge, take } from "@pulse/core";
 import { VirtualScheduler } from "@pulse/scheduler";
-import { fromArray, map, filter, take, merge } from "@pulse/core";
+import { toDuration, toTime } from "@pulse/types";
 import { describe, expect, it } from "vitest";
-import { parseMarble, marbleDuration } from "./marble.js";
-import { testEvent } from "./testEvent.js";
-import { collectEvents, collectSync } from "./collect.js";
 import { assertEvents } from "./assert.js";
+import { collectEvents, collectSync } from "./collect.js";
+import { marbleDuration, parseMarble } from "./marble.js";
+import { testEvent } from "./testEvent.js";
 
 describe("parseMarble", () => {
   it("parses simple marble string", () => {
@@ -145,7 +145,10 @@ describe("collectSync", () => {
 
   it("works with combinators on sync sources", () => {
     const scheduler = new VirtualScheduler();
-    const event = take(2, map((x: number) => x * 10, fromArray([1, 2, 3, 4])));
+    const event = take(
+      2,
+      map((x: number) => x * 10, fromArray([1, 2, 3, 4])),
+    );
     const values = collectSync(event, scheduler);
     expect(values).toEqual([10, 20]);
   });
