@@ -11,6 +11,7 @@
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import { _EmptySource, _NowSource, _EMPTY_SOURCE } from "../constructors.js";
 import { _createEvent, _getSource } from "./event.js";
 import { Pipe } from "./Pipe.js";
 
@@ -105,8 +106,18 @@ class MapSource<A, B, E> implements Source<B, E> {
     return this.source.run(new MapSink(this.f, sink), scheduler);
   }
 
-  /** Factory with fusion: collapses map∘map and map∘filter. */
+  /** Factory with fusion and algebraic simplification. */
   static create<A, B, E>(f: (a: A) => B, source: Source<A, E>): Source<B, E> {
+    // map(f, empty()) → empty()
+    if (source instanceof _EmptySource) {
+      return _EMPTY_SOURCE as unknown as Source<B, E>;
+    }
+
+    // map(f, now(x)) → now(f(x))  — constant folding
+    if (source instanceof _NowSource) {
+      return new _NowSource(f((source as _NowSource<A>).value));
+    }
+
     // map(f, map(g, s)) → map(f∘g, s)
     if (source instanceof MapSource) {
       const inner = source as MapSource<unknown, A, E>;
@@ -137,8 +148,21 @@ class FilterSource<A, E> implements Source<A, E> {
     return this.source.run(new FilterSink(this.predicate, sink), scheduler);
   }
 
-  /** Factory with fusion: collapses filter∘filter and filter∘map. */
+  /** Factory with fusion and algebraic simplification. */
   static create<A, E>(predicate: (a: A) => boolean, source: Source<A, E>): Source<A, E> {
+    // filter(p, empty()) → empty()
+    if (source instanceof _EmptySource) {
+      return _EMPTY_SOURCE as unknown as Source<A, E>;
+    }
+
+    // filter(p, now(x)) → p(x) ? now(x) : empty()  — constant folding
+    if (source instanceof _NowSource) {
+      const val = (source as _NowSource<A>).value;
+      return predicate(val)
+        ? (source as unknown as Source<A, E>)
+        : (_EMPTY_SOURCE as unknown as Source<A, E>);
+    }
+
     // filter(p, filter(q, s)) → filter(x => q(x) && p(x), s)
     if (source instanceof FilterSource) {
       const inner = source as FilterSource<A, E>;
@@ -191,6 +215,11 @@ class MapFilterSource<A, B, E> implements Source<B, E> {
     return this.source.run(new MapFilterSink(this.f, this.predicate, sink), scheduler);
   }
 }
+
+// --- Internal exports for cross-module fusion ---
+
+/** @internal — used by scan for scan∘map detection */
+export { MapSource as _MapSource };
 
 // --- Public API ---
 

@@ -22,10 +22,18 @@ import { _createEvent } from "./internal/event.js";
 // --- Source classes for V8 hidden class stability ---
 
 class EmptySource<A> implements Source<A, never> {
+  declare readonly _sync: true;
+
+  constructor() {
+    this._sync = true;
+  }
+
   run(sink: Sink<A, never>, scheduler: Scheduler) {
     sink.end(scheduler.currentTime());
     return disposeNone;
   }
+
+  syncIterate(_emit: (value: A) => boolean): void {}
 }
 
 class NeverSource<A> implements Source<A, never> {
@@ -36,22 +44,34 @@ class NeverSource<A> implements Source<A, never> {
 
 class NowSource<A> implements Source<A, never> {
   declare readonly value: A;
+  declare readonly _sync: true;
+
   constructor(value: A) {
     this.value = value;
+    this._sync = true;
   }
+
   run(sink: Sink<A, never>, scheduler: Scheduler) {
     const t = scheduler.currentTime();
     sink.event(t, this.value);
     sink.end(t);
     return disposeNone;
   }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    emit(this.value);
+  }
 }
 
 class ArraySource<A> implements Source<A, never> {
   declare readonly values: readonly A[];
+  declare readonly _sync: true;
+
   constructor(values: readonly A[]) {
     this.values = values;
+    this._sync = true;
   }
+
   run(sink: Sink<A, never>, scheduler: Scheduler) {
     const t = scheduler.currentTime();
     const values = this.values;
@@ -61,12 +81,24 @@ class ArraySource<A> implements Source<A, never> {
     sink.end(t);
     return disposeNone;
   }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    const values = this.values;
+    for (let i = 0; i < values.length; i++) {
+      if (!emit(values[i]!)) return;
+    }
+  }
 }
 
 // --- Singletons for empty/never ---
 
 const EMPTY_SOURCE = new EmptySource<never>();
 const NEVER_SOURCE = new NeverSource<never>();
+
+// --- Internal exports for algebraic simplification ---
+
+/** @internal — used by combinators for instanceof detection */
+export { EmptySource as _EmptySource, NowSource as _NowSource, EMPTY_SOURCE as _EMPTY_SOURCE };
 
 // --- Public API ---
 
@@ -181,9 +213,11 @@ export const periodic = (period: Duration): Event<undefined, never> =>
 
 class IterableSource<A> implements Source<A, never> {
   declare readonly iterable: Iterable<A>;
+  declare readonly _sync: true;
 
   constructor(iterable: Iterable<A>) {
     this.iterable = iterable;
+    this._sync = true;
   }
 
   run(sink: Sink<A, never>, scheduler: Scheduler): Disposable {
@@ -193,6 +227,12 @@ class IterableSource<A> implements Source<A, never> {
     }
     sink.end(t);
     return disposeNone;
+  }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    for (const value of this.iterable) {
+      if (!emit(value)) return;
+    }
   }
 }
 

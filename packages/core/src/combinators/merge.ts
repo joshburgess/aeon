@@ -38,9 +38,18 @@ class MergeSink<A, E> implements Sink<A, E> {
 
 class MergeSource<A, E> implements Source<A, E> {
   declare readonly sources: Source<A, E>[];
+  declare readonly _sync: boolean;
 
   constructor(sources: Source<A, E>[]) {
     this.sources = sources;
+    let sync = true;
+    for (let i = 0; i < sources.length; i++) {
+      if ((sources[i] as any)._sync !== true) {
+        sync = false;
+        break;
+      }
+    }
+    this._sync = sync;
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
@@ -52,13 +61,33 @@ class MergeSource<A, E> implements Source<A, E> {
     }
     return disposeAll(disposables);
   }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    const sources = this.sources;
+    let active = true;
+    const wrappedEmit = (v: A) => {
+      active = emit(v);
+      return active;
+    };
+    for (let i = 0; i < sources.length && active; i++) {
+      (sources[i]! as any).syncIterate(wrappedEmit);
+    }
+  }
 }
 
 class EmptyMergeSource<A, E> implements Source<A, E> {
+  declare readonly _sync: true;
+
+  constructor() {
+    this._sync = true;
+  }
+
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
     sink.end(scheduler.currentTime());
     return disposeNone;
   }
+
+  syncIterate(_emit: (value: A) => boolean): void {}
 }
 
 const EMPTY_MERGE = new EmptyMergeSource<never, never>();
@@ -66,6 +95,8 @@ const EMPTY_MERGE = new EmptyMergeSource<never, never>();
 /**
  * Merge multiple Event streams into one, interleaving values by time.
  * Ends when all input streams have ended.
+ *
+ * Flattens nested merges: merge(a, merge(b, c)) → merge(a, b, c)
  */
 export const merge = <A, E>(...events: Event<A, E>[]): Event<A, E> => {
   if (events.length === 0) {
@@ -73,9 +104,24 @@ export const merge = <A, E>(...events: Event<A, E>[]): Event<A, E> => {
   }
   if (events.length === 1) return events[0]!;
 
-  const sources = new Array<Source<A, E>>(events.length);
+  // Flatten nested merges and collect sources
+  const sources: Source<A, E>[] = [];
   for (let i = 0; i < events.length; i++) {
-    sources[i] = _getSource(events[i]!);
+    const source = _getSource(events[i]!);
+    if (source instanceof MergeSource) {
+      // Flatten: merge(a, merge(b, c)) → merge(a, b, c)
+      const inner = source.sources;
+      for (let j = 0; j < inner.length; j++) {
+        sources.push(inner[j]!);
+      }
+    } else {
+      sources.push(source);
+    }
   }
+
+  if (sources.length === 1) {
+    return _createEvent(sources[0]!);
+  }
+
   return _createEvent(new MergeSource(sources));
 };

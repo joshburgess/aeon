@@ -1,8 +1,14 @@
 /**
  * Slicing combinators: take, skip, takeWhile, skipWhile, slice.
+ *
+ * Includes algebraic simplifications:
+ * - take(n, take(m, s)) → take(min(n, m), s)
+ * - skip(n, skip(m, s)) → skip(n + m, s)
+ * - take/skip on empty → empty
  */
 
 import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import { _EmptySource, _EMPTY_SOURCE } from "../constructors.js";
 import { SettableDisposable, disposeNone } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 import { Pipe } from "../internal/Pipe.js";
@@ -33,10 +39,12 @@ class TakeSink<A, E> extends Pipe<A, E> {
 class TakeSource<A, E> implements Source<A, E> {
   declare readonly n: number;
   declare readonly source: Source<A, E>;
+  declare readonly _sync: boolean;
 
   constructor(n: number, source: Source<A, E>) {
     this.n = n;
     this.source = source;
+    this._sync = (source as any)._sync === true;
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
@@ -44,13 +52,30 @@ class TakeSource<A, E> implements Source<A, E> {
     sd.set(this.source.run(new TakeSink(this.n, sink, sd), scheduler));
     return sd;
   }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    let remaining = this.n;
+    (this.source as any).syncIterate((v: A) => {
+      if (remaining <= 0) return false;
+      remaining--;
+      return emit(v) && remaining > 0;
+    });
+  }
 }
 
 class EmptySliceSource<A, E> implements Source<A, E> {
+  declare readonly _sync: true;
+
+  constructor() {
+    this._sync = true;
+  }
+
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
     sink.end(scheduler.currentTime());
     return disposeNone;
   }
+
+  syncIterate(_emit: (value: A) => boolean): void {}
 }
 
 const EMPTY_SLICE = new EmptySliceSource<never, never>();
@@ -60,7 +85,19 @@ export const take = <A, E>(n: number, event: Event<A, E>): Event<A, E> => {
   if (n <= 0) {
     return _createEvent(EMPTY_SLICE as unknown as Source<A, E>);
   }
-  return _createEvent(new TakeSource(n, _getSource(event)));
+  const source = _getSource(event);
+
+  // take(n, empty()) → empty()
+  if (source instanceof _EmptySource) {
+    return _createEvent(_EMPTY_SOURCE as unknown as Source<A, E>);
+  }
+
+  // take(n, take(m, s)) → take(min(n, m), s)
+  if (source instanceof TakeSource) {
+    return _createEvent(new TakeSource(Math.min(n, source.n), source.source));
+  }
+
+  return _createEvent(new TakeSource(n, source));
 };
 
 // --- skip ---
@@ -85,21 +122,46 @@ class SkipSink<A, E> extends Pipe<A, E> {
 class SkipSource<A, E> implements Source<A, E> {
   declare readonly n: number;
   declare readonly source: Source<A, E>;
+  declare readonly _sync: boolean;
 
   constructor(n: number, source: Source<A, E>) {
     this.n = n;
     this.source = source;
+    this._sync = (source as any)._sync === true;
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
     return this.source.run(new SkipSink(this.n, sink), scheduler);
+  }
+
+  syncIterate(emit: (value: A) => boolean): void {
+    let remaining = this.n;
+    (this.source as any).syncIterate((v: A) => {
+      if (remaining > 0) {
+        remaining--;
+        return true;
+      }
+      return emit(v);
+    });
   }
 }
 
 /** Skip the first n values, then pass through the rest. */
 export const skip = <A, E>(n: number, event: Event<A, E>): Event<A, E> => {
   if (n <= 0) return event;
-  return _createEvent(new SkipSource(n, _getSource(event)));
+  const source = _getSource(event);
+
+  // skip(n, empty()) → empty()
+  if (source instanceof _EmptySource) {
+    return _createEvent(_EMPTY_SOURCE as unknown as Source<A, E>);
+  }
+
+  // skip(n, skip(m, s)) → skip(n + m, s)
+  if (source instanceof SkipSource) {
+    return _createEvent(new SkipSource(n + source.n, source.source));
+  }
+
+  return _createEvent(new SkipSource(n, source));
 };
 
 // --- takeWhile ---

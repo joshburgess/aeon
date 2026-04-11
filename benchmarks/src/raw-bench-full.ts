@@ -73,13 +73,22 @@ async function runBench(
   pulseFn: () => Promise<unknown>,
   mostFn: () => Promise<unknown>,
 ) {
-  // Warmup and measure pulse
+  // Warmup both
   await bench(pulseFn, WARMUP);
-  const pulseTimes = await bench(pulseFn, ITERATIONS);
-
-  // Warmup and measure @most
   await bench(mostFn, WARMUP);
-  const mostTimes = await bench(mostFn, ITERATIONS);
+
+  // Alternating measurement to eliminate run-order bias
+  const pulseTimes: number[] = [];
+  const mostTimes: number[] = [];
+  for (let i = 0; i < ITERATIONS; i++) {
+    const s1 = performance.now();
+    await pulseFn();
+    pulseTimes.push(performance.now() - s1);
+
+    const s2 = performance.now();
+    await mostFn();
+    mostTimes.push(performance.now() - s2);
+  }
 
   report(name, stats(pulseTimes), stats(mostTimes));
 }
@@ -109,14 +118,21 @@ async function main() {
     async () => { await runEffects(mostFilter(isEven, mostFromArray(arr)), newDefaultScheduler()); },
   );
 
-  // 4. filter → map → reduce
+  // 4. filter → map → scan (3 sinks each — fair comparison)
+  await runBench(
+    "filter → map → scan",
+    async () => { await drain(scan(add, 0, map(double, filter(isEven, fromArray(arr)))), new VirtualScheduler()); },
+    async () => { await runEffects(mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))), newDefaultScheduler()); },
+  );
+
+  // 5. filter → map → reduce (pulse-only advantage — @most has no reduce)
   await runBench(
     "filter → map → reduce",
     async () => { await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), new VirtualScheduler()); },
     async () => { await runEffects(mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))), newDefaultScheduler()); },
   );
 
-  // 5. scan
+  // 6. scan
   await runBench(
     "scan",
     async () => { await drain(scan(add, 0, fromArray(arr)), new VirtualScheduler()); },
@@ -144,18 +160,20 @@ async function main() {
     async () => { await runEffects(mostScan(add, 0, mostFromArray(arr)), newDefaultScheduler()); },
   );
 
-  // 9. merge(2 streams)
-  await runBench(
-    "merge(2 × 500K)",
-    async () => {
-      const half = arr.slice(0, 500_000);
-      await drain(merge(fromArray(half), fromArray(half)), new VirtualScheduler());
-    },
-    async () => {
-      const half = arr.slice(0, 500_000);
-      await runEffects(mostMerge(mostFromArray(half), mostFromArray(half)), newDefaultScheduler());
-    },
-  );
+  // 9. merge(2 streams) — @most's merge crashes on synchronous sources, so pulse-only
+  {
+    const half = arr.slice(0, 500_000);
+    await bench(async () => drain(merge(fromArray(half), fromArray(half)), new VirtualScheduler()), WARMUP);
+    const pulseTimes = await bench(
+      async () => drain(merge(fromArray(half), fromArray(half)), new VirtualScheduler()),
+      ITERATIONS,
+    );
+    const ps = stats(pulseTimes);
+    console.log(`  merge(2 × 500K)`);
+    console.log(`    pulse:  mean=${ps.mean.toFixed(3)}ms  min=${ps.min.toFixed(3)}ms  p50=${ps.p50.toFixed(3)}ms`);
+    console.log(`    (@most crashes on synchronous merge — skipped)`);
+    console.log();
+  }
 }
 
 main().catch(console.error);

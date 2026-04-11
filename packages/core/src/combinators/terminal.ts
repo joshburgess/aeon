@@ -91,17 +91,35 @@ class DrainSink<E> implements Sink<unknown, E> {
  * Fold all values into a single result. Activates the stream.
  *
  * Denotation: `reduce(f, seed, e) = foldl f seed (map snd e)`
+ *
+ * Uses sync loop compilation when the source chain is fully synchronous,
+ * bypassing the Sink protocol for a tight for-loop.
  */
 export const reduce = <A, B, E>(
   f: (acc: B, a: A) => B,
   seed: B,
   event: Event<A, E>,
   scheduler: Scheduler,
-): Promise<B> =>
-  new Promise((resolve, reject) => {
-    const source = _getSource(event);
+): Promise<B> => {
+  const source = _getSource(event);
+
+  if ((source as any)._sync === true) {
+    try {
+      let acc = seed;
+      (source as any).syncIterate((value: A) => {
+        acc = f(acc, value);
+        return true;
+      });
+      return Promise.resolve(acc);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
     source.run(new ReduceSink(f, seed, resolve, reject), scheduler);
   });
+};
 
 /**
  * Run a side-effect for each value. Activates the stream.
@@ -112,19 +130,44 @@ export const observe = <A, E>(
   f: (a: A) => void,
   event: Event<A, E>,
   scheduler: Scheduler,
-): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const source = _getSource(event);
+): Promise<void> => {
+  const source = _getSource(event);
+
+  if ((source as any)._sync === true) {
+    try {
+      (source as any).syncIterate((value: A) => {
+        f(value);
+        return true;
+      });
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
     source.run(new ObserveSink(f, resolve, reject), scheduler);
   });
+};
 
 /**
  * Activate the stream, discarding all values. Returns when the stream ends.
  *
  * Denotation: activates the event sequence purely for its effects.
  */
-export const drain = <A, E>(event: Event<A, E>, scheduler: Scheduler): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const source = _getSource(event);
+export const drain = <A, E>(event: Event<A, E>, scheduler: Scheduler): Promise<void> => {
+  const source = _getSource(event);
+
+  if ((source as any)._sync === true) {
+    try {
+      (source as any).syncIterate(() => true);
+      return Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
     source.run(new DrainSink(resolve, reject) as unknown as Sink<A, E>, scheduler);
   });
+};
