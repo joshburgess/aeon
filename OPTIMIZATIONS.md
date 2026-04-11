@@ -173,17 +173,24 @@ monomorphic class design and `declare readonly` field pattern pay off here
 too — V8 maintains stable hidden classes across the entire Sink chain,
 enabling consistent inline caching.
 
-### Results vs RxJS (push-based, 100k events)
+### Results: Pulse vs @most/core vs RxJS (push-based, 100k events)
 
-| Benchmark | Pulse | RxJS | Speedup |
-|-----------|-------|------|---------|
-| push → filter → map → scan | 0.41ms | 3.79ms | **9.4x** |
-| multicast fan-out (10 subs) | 6.80ms | 19.78ms | **2.9x** |
-| mergeMap (1k × 100 inner) | 0.19ms | 1.01ms | **5.4x** |
-| switchLatest (100 × 1k) | 0.35ms | 0.83ms | **2.4x** |
-| 10 chained maps (push) | 5.30ms | 12.91ms | **2.4x** |
-| take(100) from push | 0.04ms | 0.13ms | **3.7x** |
-| merge 5 push sources | 2.03ms | 3.05ms | **1.5x** |
+| Benchmark | Pulse | @most/core | RxJS | vs @most | vs RxJS |
+|-----------|-------|-----------|------|----------|---------|
+| push → filter → map → scan | 0.38ms | 1.70ms | 3.65ms | **4.4x** | **9.5x** |
+| multicast fan-out (10 subs) | 6.83ms | 7.22ms | 18.19ms | **1.06x** | **2.7x** |
+| mergeMap (1k × 100 inner) | 0.18ms | 0.53ms | 0.92ms | **2.9x** | **5.1x** |
+| switchLatest (100 × 1k) | 0.37ms | N/A¹ | 0.81ms | — | **2.2x** |
+| 10 chained maps (push) | 5.20ms | 5.39ms | 12.31ms | **1.04x** | **2.4x** |
+| take(100) from push | 0.035ms | 0.025ms | 0.128ms | 0.71x² | **3.7x** |
+| merge 5 push sources | 1.98ms | 2.30ms | 2.97ms | **1.16x** | **1.5x** |
+
+¹ @most/core's `switchLatest` does not handle synchronous re-entrant switch
+(all inner streams emitting synchronously within a single outer emission).
+
+² @most/core's multicast adapter is slightly lighter for the take(100) micro-
+benchmark because its `newStream`+`mostMulticast` wrapper has less per-sink
+overhead than Pulse's `createAdapter`. Pulse still beats RxJS by 3.7x.
 
 ### Why Pulse is faster in the Sink protocol
 
