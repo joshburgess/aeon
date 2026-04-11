@@ -27,6 +27,7 @@ import { startWith } from "./combinators/startWith.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
+import { TimeoutError, timeout } from "./combinators/timeout.js";
 import { withLatestFrom } from "./combinators/withLatestFrom.js";
 import { empty, fromArray, never, now, range } from "./constructors.js";
 import { _createEvent, _getSource } from "./internal/event.js";
@@ -1412,5 +1413,90 @@ describe("range", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(range(0, -5), scheduler);
     expect(result).toEqual([]);
+  });
+});
+
+describe("timeout", () => {
+  it("passes through events when they arrive before the deadline", () => {
+    const scheduler = new TestScheduler();
+    const values: number[] = [];
+    const errors: unknown[] = [];
+    // fromArray emits synchronously at t=0, well before any timeout
+    _getSource(timeout(toDuration(100), fromArray([1, 2, 3]))).run(
+      {
+        event(_t: Time, v: number) {
+          values.push(v);
+        },
+        error(_t: Time, e: unknown) {
+          errors.push(e);
+        },
+        end() {},
+      } as Sink<number, TimeoutError>,
+      scheduler,
+    );
+    scheduler.flush();
+    expect(values).toEqual([1, 2, 3]);
+    expect(errors).toEqual([]);
+  });
+
+  it("fires TimeoutError when no event arrives within duration", () => {
+    const scheduler = new TestScheduler();
+    const errors: unknown[] = [];
+    // never() never emits, so the timeout should fire
+    _getSource(timeout(toDuration(50), never())).run(
+      {
+        event() {},
+        error(_t: Time, e: unknown) {
+          errors.push(e);
+        },
+        end() {},
+      } as Sink<unknown, TimeoutError>,
+      scheduler,
+    );
+    // Advance past the timeout duration
+    scheduler.advanceTo(toTime(51));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toBeInstanceOf(TimeoutError);
+  });
+
+  it("does not fire if stream ends before timeout", () => {
+    const scheduler = new TestScheduler();
+    const errors: unknown[] = [];
+    let ended = false;
+    // empty() ends immediately at t=0
+    _getSource(timeout(toDuration(100), empty())).run(
+      {
+        event() {},
+        error(_t: Time, e: unknown) {
+          errors.push(e);
+        },
+        end() {
+          ended = true;
+        },
+      } as Sink<unknown, TimeoutError>,
+      scheduler,
+    );
+    scheduler.flush();
+    expect(ended).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it("dispose cancels pending timeout", () => {
+    const scheduler = new TestScheduler();
+    const errors: unknown[] = [];
+    const d = _getSource(timeout(toDuration(50), never())).run(
+      {
+        event() {},
+        error(_t: Time, e: unknown) {
+          errors.push(e);
+        },
+        end() {},
+      } as Sink<unknown, TimeoutError>,
+      scheduler,
+    );
+    // Dispose before timeout fires
+    d.dispose();
+    scheduler.advanceTo(toTime(100));
+    expect(errors).toEqual([]);
   });
 });

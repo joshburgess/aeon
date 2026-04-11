@@ -1,5 +1,5 @@
 import { VirtualScheduler } from "@pulse/scheduler";
-import { type Time, toTime } from "@pulse/types";
+import { type Sink, type Time, toDuration, toTime } from "@pulse/types";
 import { describe, expect, it } from "vitest";
 import { constantB } from "./behavior.js";
 import { empty, fromArray, now } from "./constructors.js";
@@ -128,5 +128,146 @@ describe("fluent API", () => {
       .mapError((e: never) => e)
       .reduce((acc: number, x: number) => acc + x, 0, scheduler);
     expect(result).toBe(12);
+  });
+
+  it("chains distinctUntilChanged", async () => {
+    const scheduler = new VirtualScheduler();
+    const values: number[] = [];
+    await fluent(fromArray([1, 1, 2, 2, 3, 1]))
+      .distinctUntilChanged()
+      .observe((v: number) => values.push(v), scheduler);
+    expect(values).toEqual([1, 2, 3, 1]);
+  });
+
+  it("chains startWith", async () => {
+    const scheduler = new VirtualScheduler();
+    const values: number[] = [];
+    await fluent(fromArray([2, 3]))
+      .startWith(1)
+      .observe((v: number) => values.push(v), scheduler);
+    expect(values).toEqual([1, 2, 3]);
+  });
+
+  it("chains first", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([10, 20, 30]))
+      .first()
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(10);
+  });
+
+  it("chains last", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([10, 20, 30]))
+      .last()
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(30);
+  });
+
+  it("chains pairwise", async () => {
+    const scheduler = new VirtualScheduler();
+    const values: [number, number][] = [];
+    await fluent(fromArray([1, 2, 3, 4]))
+      .pairwise()
+      .observe((v: [number, number]) => values.push(v), scheduler);
+    expect(values).toEqual([
+      [1, 2],
+      [2, 3],
+      [3, 4],
+    ]);
+  });
+
+  it("chains concatMap", async () => {
+    const scheduler = new VirtualScheduler();
+    const values: number[] = [];
+    await fluent(fromArray([1, 2, 3]))
+      .concatMap((x: number) => fromArray([x, x * 10]))
+      .observe((v: number) => values.push(v), scheduler);
+    expect(values).toEqual([1, 10, 2, 20, 3, 30]);
+  });
+
+  it("chains exhaustMap", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2]))
+      .exhaustMap((x: number) => now(x * 100))
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(300);
+  });
+
+  it("chains defaultIfEmpty on empty stream", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(empty<number, never>())
+      .defaultIfEmpty(42)
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(42);
+  });
+
+  it("chains finalize runs cleanup", async () => {
+    const scheduler = new VirtualScheduler();
+    let cleaned = false;
+    await fluent(fromArray([1, 2, 3]))
+      .finalize(() => {
+        cleaned = true;
+      })
+      .drain(scheduler);
+    expect(cleaned).toBe(true);
+  });
+
+  it("chains count", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2, 3, 4, 5]))
+      .count()
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(5);
+  });
+
+  it("chains every", async () => {
+    const scheduler = new VirtualScheduler();
+    const values: boolean[] = [];
+    await fluent(fromArray([2, 4, 6]))
+      .every((x: number) => x % 2 === 0)
+      .observe((v: boolean) => values.push(v), scheduler);
+    expect(values).toEqual([true]);
+  });
+
+  it("chains elementAt", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([10, 20, 30, 40]))
+      .elementAt(2)
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(30);
+  });
+
+  it("chains race", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2, 3]))
+      .race(fromArray([10, 20, 30]))
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    // Both emit at t=0; first source to emit wins
+    expect(result).toBeGreaterThan(0);
+  });
+
+  it("chains timeout with sync events", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2, 3]))
+      .timeout(toDuration(1000))
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(6);
+  });
+
+  it("chains retry with no errors", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2, 3]))
+      .retry(3)
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(6);
+  });
+
+  it("chains share", async () => {
+    const scheduler = new VirtualScheduler();
+    const result = await fluent(fromArray([1, 2, 3]))
+      .share(1)
+      .reduce((acc: number, x: number) => acc + x, 0, scheduler);
+    expect(result).toBe(6);
   });
 });
