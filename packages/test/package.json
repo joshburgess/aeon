@@ -1,6 +1,6 @@
 {
   "name": "aeon-test",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Marble testing utilities for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
