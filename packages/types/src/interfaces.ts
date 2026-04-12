@@ -108,23 +108,26 @@ export type Behavior<A, E = never> = {
 };
 
 // --- Type Lambdas for HKT encoding ---
+//
+// Convention (matches Effect's `Effect` / `Stream` type lambdas):
+//   - `Target` = A — the value/success slot.
+//   - `Out1`   = E — the error channel.
+//   - `Out2`   and `In` are unused (Event/Behavior have no R or extra channel).
 
 /**
  * Type lambda for `Event<A, E>`.
  *
- * Use with `Kind<EventTypeLambda, A, E>` to refer to `Event<A, E>` in
- * typeclass-generic code.
+ * Resolves: `Kind<EventTypeLambda, In, Out2, E, A>` → `Event<A, E>`.
  */
 export interface EventTypeLambda extends TypeLambda {
-  readonly type: Event<this["A"], this["E"]>;
+  readonly type: Event<this["Target"], this["Out1"]>;
 }
 
 /**
  * Type lambda for `Behavior<A, E>`.
  *
- * Use with `Kind<BehaviorTypeLambda, A, E>` to refer to `Behavior<A, E>`
- * in typeclass-generic code.
+ * Resolves: `Kind<BehaviorTypeLambda, In, Out2, E, A>` → `Behavior<A, E>`.
  */
 export interface BehaviorTypeLambda extends TypeLambda {
-  readonly type: Behavior<this["A"], this["E"]>;
+  readonly type: Behavior<this["Target"], this["Out1"]>;
 }

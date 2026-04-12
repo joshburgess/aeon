@@ -36,3 +36,19 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  hkt-drift:
+    # Verifies the verbatim Effect HKT copies in packages/types/src/hkt.ts
+    # still match upstream. Runs in parallel with the main CI job so a
+    # transient GitHub API / network failure here does not block merges
+    # on the main code path — but a real drift failure is loud.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check Effect HKT drift
+        run: node scripts/check-hkt-drift.mjs

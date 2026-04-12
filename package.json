@@ -14,6 +14,7 @@
     "bench": "vitest bench --run",
     "bench:watch": "vitest bench",
     "bundle-size": "node benchmarks/src/bundle-size.mjs",
+    "check:hkt-drift": "node scripts/check-hkt-drift.mjs",
     "release": "pnpm build && pnpm test && pnpm -r publish --access public --no-git-checks",
     "release:dry-run": "pnpm -r publish --access public --no-git-checks --dry-run"
   },
