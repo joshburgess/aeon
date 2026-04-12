@@ -5,7 +5,7 @@
  * Emits [previous, current] tuples, starting from the second event.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
 class PairwiseSink<A, E> {

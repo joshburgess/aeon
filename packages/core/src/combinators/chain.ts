@@ -1,5 +1,5 @@
 /**
- * chain (flatMap / concatMap) combinator.
+ * chain combinator.
  *
  * Denotation: `chain(f, e) = concat(map(f, e))` — each inner stream
  * runs to completion before the next begins.
@@ -7,7 +7,7 @@
  * Uses monomorphic Sink/Source classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { SettableDisposable } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 
@@ -122,7 +122,7 @@ class ChainSource<A, B, E> implements Source<B, E> {
 
 /**
  * Sequentially flatMap: for each value, create an inner Event and
- * concatenate the results (concatMap semantics).
+ * concatenate the results.
  *
  * Denotation: `chain(f, e) = concat [f(v) | (t, v) ∈ e]`
  */

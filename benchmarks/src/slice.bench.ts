@@ -1,14 +1,14 @@
 /**
- * Benchmark: take + skip (slice) over 1M integers.
+ * Benchmark: take + drop (slice) over 1M integers.
  *
- * Tests early termination and skip overhead.
+ * Tests early termination and drop overhead.
  */
 
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { drain, fromArray, skip, take } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, drop, fromArray, take } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import { skip as mostSkip, take as mostTake, runEffects } from "@most/core";
@@ -51,10 +51,10 @@ describe("take(100) from 1M", () => {
   });
 });
 
-describe("skip(999_900) from 1M (take last 100)", () => {
+describe("drop(999_900) from 1M (take last 100)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
-    await drain(skip(999_900, fromArray(arr)), scheduler);
+    await drain(drop(999_900, fromArray(arr)), scheduler);
   });
 
   bench("@most/core", async () => {

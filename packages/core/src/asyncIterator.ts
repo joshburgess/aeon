@@ -5,7 +5,7 @@
  * providing natural backpressure via pull-based async iteration.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types";
 import { _createEvent, _getSource } from "./internal/event.js";
 
 /**

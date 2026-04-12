@@ -1,15 +1,15 @@
 /**
- * defaultIfEmpty combinator.
+ * orElse combinator.
  *
  * Denotation: if the stream completes without emitting any values,
  * emit a default value before ending.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { Pipe } from "../internal/Pipe.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class DefaultIfEmptySink<A, E> extends Pipe<A, E> {
+class OrElseSink<A, E> extends Pipe<A, E> {
   declare readonly defaultValue: A;
   declare hasValue: boolean;
 
@@ -32,7 +32,7 @@ class DefaultIfEmptySink<A, E> extends Pipe<A, E> {
   }
 }
 
-class DefaultIfEmptySource<A, E> implements Source<A, E> {
+class OrElseSource<A, E> implements Source<A, E> {
   declare readonly defaultValue: A;
   declare readonly source: Source<A, E>;
 
@@ -42,14 +42,14 @@ class DefaultIfEmptySource<A, E> implements Source<A, E> {
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    return this.source.run(new DefaultIfEmptySink(this.defaultValue, sink), scheduler);
+    return this.source.run(new OrElseSink(this.defaultValue, sink), scheduler);
   }
 }
 
 /**
  * Emit a default value if the stream completes without producing any values.
  *
- * Denotation: `defaultIfEmpty(d, e) = isEmpty(e) ? [(t_end, d)] : e`
+ * Denotation: `orElse(d, e) = isEmpty(e) ? [(t_end, d)] : e`
  */
-export const defaultIfEmpty = <A, E>(defaultValue: A, event: Event<A, E>): Event<A, E> =>
-  _createEvent(new DefaultIfEmptySource(defaultValue, _getSource(event)));
+export const orElse = <A, E>(defaultValue: A, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new OrElseSource(defaultValue, _getSource(event)));

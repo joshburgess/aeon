@@ -1,5 +1,5 @@
 /**
- * mergeMapConcurrently combinator.
+ * mergeMap combinator.
  *
  * Maps each value to an inner Event and merges the results, with
  * bounded concurrency.
@@ -7,7 +7,7 @@
  * Uses monomorphic Sink/Source classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
 class MergeMapInnerSink<B, E> implements Sink<B, E> {
@@ -133,11 +133,11 @@ class MergeMapSource<A, B, E> implements Source<B, E> {
 /**
  * Map each value to an Event and merge the results with bounded concurrency.
  *
- * Denotation: `mergeMapConcurrently(f, c, e) = merge(map(f, e))` with
+ * Denotation: `mergeMap(f, c, e) = merge(map(f, e))` with
  * at most `c` inner streams active at any time. Values from finished
  * inner streams are replaced by newly spawned ones from the buffer.
  */
-export const mergeMapConcurrently = <A, B, E>(
+export const mergeMap = <A, B, E>(
   f: (a: A) => Event<B, E>,
   concurrency: number,
   event: Event<A, E>,

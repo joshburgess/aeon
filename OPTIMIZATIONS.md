@@ -1,6 +1,6 @@
-# Pulse Optimization Architecture
+# Aeon Optimization Architecture
 
-This document describes the performance optimizations in Pulse that go beyond
+This document describes the performance optimizations in Aeon that go beyond
 what @most/core provides. Each section covers the motivation, mechanism,
 and where in the codebase the optimization lives.
 
@@ -11,7 +11,7 @@ and where in the codebase the optimization lives.
 **Files:** `packages/core/src/internal/fusion.ts`, `packages/core/src/combinators/scan.ts`,
 `packages/core/src/combinators/slice.ts`, `packages/core/src/combinators/merge.ts`
 
-At event construction time, Pulse detects fusible patterns via `instanceof`
+At event construction time, Aeon detects fusible patterns via `instanceof`
 checks on Source classes and collapses them into a single operation:
 
 | Pattern | Optimization |
@@ -22,7 +22,7 @@ checks on Source classes and collapses them into a single operation:
 | `filter(p, map(f, s))` | `mapFilter(f, p, s)` — one node does both |
 | `scan(f, seed, map(g, s))` | `scan((acc, x) => f(acc, g(x)), seed, s)` — composed step function |
 | `take(n, take(m, s))` | `take(min(n, m), s)` — smallest bound wins |
-| `skip(n, skip(m, s))` | `skip(n + m, s)` — offsets add |
+| `drop(n, drop(m, s))` | `drop(n + m, s)` — offsets add |
 | `merge(a, merge(b, c))` | `merge(a, b, c)` — flat source array |
 
 **Algebraic simplifications** eliminate dead pipeline nodes:
@@ -34,7 +34,7 @@ checks on Source classes and collapses them into a single operation:
 | `map(f, now(x))` | `now(f(x))` — constant folding |
 | `filter(p, now(x))` | `p(x) ? now(x) : empty()` — constant folding |
 | `take(n, empty())` | `empty()` |
-| `skip(n, empty())` | `empty()` |
+| `drop(n, empty())` | `empty()` |
 | `scan(f, seed, empty())` | `empty()` |
 
 ---
@@ -138,7 +138,7 @@ The sync path wins specifically for:
 
 ### Results vs @most/core (synchronous sources, 1M integers)
 
-| Benchmark | Pulse | @most | Speedup |
+| Benchmark | Aeon | @most | Speedup |
 |-----------|-------|-------|---------|
 | drain(fromArray) | 0.36ms | 0.38ms | 1.07x |
 | map | 0.52ms | 0.95ms | 1.81x |
@@ -146,11 +146,11 @@ The sync path wins specifically for:
 | filter->map->scan | 1.55ms | 1.69ms | 1.09x |
 | scan | 5.54ms | 7.10ms | 1.28x |
 | take(100) from 1M | 0.003ms | 6.77ms | ~2000x |
-| skip(999900) | 4.28ms | 6.74ms | 1.57x |
+| drop(999900) | 4.28ms | 6.74ms | 1.57x |
 | reduce | 5.24ms | 7.10ms | 1.35x |
 
 The take(100) result is the standout: @most iterates all 1M values through
-a TakeSink that returns early on each call, while Pulse's syncIterate
+a TakeSink that returns early on each call, while Aeon's syncIterate
 stops the source loop after exactly 100 values.
 
 ### Scope and limitations
@@ -168,14 +168,14 @@ asynchronous event streams (timers, user input, network events, etc.).
 
 The sync loop compilation path above only helps batch-processing workloads.
 For real-time event processing (DOM events, WebSocket messages, imperative
-push sources), all dispatch goes through the Sink protocol. Pulse's
+push sources), all dispatch goes through the Sink protocol. Aeon's
 monomorphic class design and `declare readonly` field pattern pay off here
 too — V8 maintains stable hidden classes across the entire Sink chain,
 enabling consistent inline caching.
 
-### Results: Pulse vs @most/core vs RxJS (push-based, 100k events)
+### Results: Aeon vs @most/core vs RxJS (push-based, 100k events)
 
-| Benchmark | Pulse | @most/core | RxJS | vs @most | vs RxJS |
+| Benchmark | Aeon | @most/core | RxJS | vs @most | vs RxJS |
 |-----------|-------|-----------|------|----------|---------|
 | push → filter → map → scan | 0.40ms | 1.85ms | 3.67ms | **4.6x** | **9.1x** |
 | multicast fan-out (10 subs) | 6.69ms | 7.15ms | 19.43ms | **1.07x** | **2.9x** |
@@ -188,19 +188,19 @@ enabling consistent inline caching.
 ¹ @most/core's `switchLatest` does not handle synchronous re-entrant switch
 (all inner streams emitting synchronously within a single outer emission).
 
-### Why Pulse is faster in the Sink protocol
+### Why Aeon is faster in the Sink protocol
 
 1. **Monomorphic Sink classes** — each operator has its own class with
    `declare readonly` fields. V8 sees a single hidden class per operator
    type and can inline the `.event()` method call chain.
 
-2. **No intermediate allocations** — Pulse Sink classes hold state directly
+2. **No intermediate allocations** — Aeon Sink classes hold state directly
    as fields (e.g., `ScanSink.acc`). RxJS Subscriber instances carry more
    metadata (teardown logic, closed state, destination chain).
 
-3. **Lighter multicast** — Pulse's `multicast()` uses a bare `Set<Sink>`
+3. **Lighter multicast** — Aeon's `multicast()` uses a bare `Set<Sink>`
    with a simple for-of loop. No subscription counting, no refCount
    management, no connectable observable protocol.
 
-4. **Direct disposal** — Pulse disposables are plain objects with a
+4. **Direct disposal** — Aeon disposables are plain objects with a
    `dispose()` method. No teardown chain, no subscription hierarchy.

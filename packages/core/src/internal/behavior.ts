@@ -6,7 +6,7 @@
  * with dirty-flag caching for derived behaviors.
  */
 
-import type { Behavior, Disposable, Event, Scheduler, Sink, Time } from "@pulse/types";
+import type { Behavior, Disposable, Event, Scheduler, Sink, Time } from "aeon-types";
 import { _getSource } from "./event.js";
 
 // --- Internal tag ---

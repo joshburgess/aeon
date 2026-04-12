@@ -3,8 +3,8 @@
  * clean, isolated V8 JIT measurements with proper warmup.
  */
 
-import { drain, filter, fromArray, map, reduce, scan } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, filter, fromArray, map, reduce, scan } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
 import { newStream } from "@most/core";

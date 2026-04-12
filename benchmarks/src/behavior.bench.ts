@@ -24,9 +24,9 @@ import {
   stepper,
   switchB,
   switcher,
-} from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Behavior, type Duration, type Time, toDuration, toTime } from "@pulse/types";
+} from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Behavior, type Duration, type Time, toDuration, toTime } from "aeon-types";
 
 describe("liftA2 sampled at 60fps for 10s", () => {
   bench("pulse", () => {

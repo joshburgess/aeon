@@ -1,10 +1,10 @@
-import { type Sink, type Time, toTime } from "@pulse/types";
+import { type Sink, type Time, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { filter } from "./combinators/filter.js";
 import { map } from "./combinators/map.js";
 import { merge } from "./combinators/merge.js";
 import { scan } from "./combinators/scan.js";
-import { skip, take } from "./combinators/slice.js";
+import { drop, take } from "./combinators/slice.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { empty, fromArray, now } from "./constructors.js";
 import { _getSource } from "./internal/event.js";
@@ -169,9 +169,9 @@ describe("Pipeline fusion", () => {
       expect(result).toEqual([]);
     });
 
-    it("skip(n, empty()) → empty()", () => {
+    it("drop(n, empty()) → empty()", () => {
       const scheduler = new TestScheduler();
-      const result = collectSync<number>(skip(5, empty()), scheduler);
+      const result = collectSync<number>(drop(5, empty()), scheduler);
       expect(result).toEqual([]);
     });
 
@@ -204,10 +204,10 @@ describe("Pipeline fusion", () => {
       expect(result).toEqual([1, 2, 3]);
     });
 
-    it("skip(n, skip(m, s)) → skip(n + m, s)", () => {
+    it("drop(n, drop(m, s)) → drop(n + m, s)", () => {
       const scheduler = new TestScheduler();
       const result = collectSync<number>(
-        skip(2, skip(3, fromArray([1, 2, 3, 4, 5, 6, 7]))),
+        drop(2, drop(3, fromArray([1, 2, 3, 4, 5, 6, 7]))),
         scheduler,
       );
       expect(result).toEqual([6, 7]);
@@ -329,12 +329,12 @@ describe("Pipeline fusion", () => {
       expect(result).toBe(6);
     });
 
-    it("skip(n) via syncIterate", async () => {
+    it("drop(n) via syncIterate", async () => {
       const scheduler = new TestScheduler();
       const result = await reduce(
         (acc: number, x: number) => acc + x,
         0,
-        skip(7, fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
+        drop(7, fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
         scheduler,
       );
       expect(result).toBe(27);

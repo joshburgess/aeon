@@ -1,5 +1,5 @@
 {
-  "name": "@pulse/benchmarks",
+  "name": "aeon-benchmarks",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -13,9 +13,9 @@
     "@most/core": "^1.6.1",
     "@most/scheduler": "^1.3.0",
     "@most/types": "^1.1.0",
-    "@pulse/core": "workspace:*",
-    "@pulse/scheduler": "workspace:*",
-    "@pulse/types": "workspace:*",
+    "aeon-core": "workspace:*",
+    "aeon-scheduler": "workspace:*",
+    "aeon-types": "workspace:*",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {

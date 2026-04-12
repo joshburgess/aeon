@@ -8,7 +8,7 @@
  * Uses monomorphic classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
 class ReplayState<A, E> {

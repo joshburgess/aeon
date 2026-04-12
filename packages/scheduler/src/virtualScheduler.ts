@@ -15,7 +15,7 @@ import {
   type Time,
   timeAdd,
   toTime,
-} from "@pulse/types";
+} from "aeon-types";
 import { VirtualClock } from "./clock.js";
 import { BinaryHeap } from "./heap.js";
 import type { HeapEntry } from "./heap.js";

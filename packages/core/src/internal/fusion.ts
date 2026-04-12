@@ -10,7 +10,7 @@
  * compiles to native `class extends`, zero overhead.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _EMPTY_SOURCE, _EmptySource, _NowSource } from "../constructors.js";
 import { Pipe } from "./Pipe.js";
 import { _createEvent, _getSource } from "./event.js";

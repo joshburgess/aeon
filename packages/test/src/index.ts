@@ -1,7 +1,7 @@
-// @pulse/test — Marble testing DSL, collection helpers, assertions
+// aeon-test — Marble testing DSL, collection helpers, assertions
 
 // Re-export VirtualScheduler for convenience
-export { VirtualScheduler } from "@pulse/scheduler";
+export { VirtualScheduler } from "aeon-scheduler";
 
 // Marble notation
 export { parseMarble, marbleDuration } from "./marble.js";

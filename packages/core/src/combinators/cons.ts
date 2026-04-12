@@ -1,14 +1,14 @@
 /**
- * startWith combinator.
+ * cons combinator.
  *
- * Denotation: `startWith(value, e) = [(t₀, value)] ++ e`
+ * Denotation: `cons(value, e) = [(t₀, value)] ++ e`
  * Prepends a synchronous initial value before the first event.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class StartWithSource<A, E> implements Source<A, E> {
+class ConsSource<A, E> implements Source<A, E> {
   declare readonly value: A;
   declare readonly source: Source<A, E>;
 
@@ -26,7 +26,7 @@ class StartWithSource<A, E> implements Source<A, E> {
 /**
  * Prepend an initial value before the first event.
  *
- * Denotation: `startWith(value, e) = [(t₀, value)] ++ e`
+ * Denotation: `cons(value, e) = [(t₀, value)] ++ e`
  */
-export const startWith = <A, E>(value: A, event: Event<A, E>): Event<A, E> =>
-  _createEvent(new StartWithSource(value, _getSource(event)));
+export const cons = <A, E>(value: A, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new ConsSource(value, _getSource(event)));

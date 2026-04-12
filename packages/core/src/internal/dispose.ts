@@ -1,4 +1,4 @@
-import type { Disposable } from "@pulse/types";
+import type { Disposable } from "aeon-types";
 
 /** A no-op disposable. */
 export const disposeNone: Disposable = { dispose() {} };

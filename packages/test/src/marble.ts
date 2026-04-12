@@ -18,8 +18,8 @@
  * Default is 1ms per unit.
  */
 
-import type { Time } from "@pulse/types";
-import { toTime } from "@pulse/types";
+import type { Time } from "aeon-types";
+import { toTime } from "aeon-types";
 
 /** A parsed marble event. */
 export type MarbleEntry<A, E> =

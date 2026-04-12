@@ -5,7 +5,7 @@
  * where `t_resolve` is the time at which the promise settles.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent } from "../internal/event.js";
 
 class FromPromiseSource<A> implements Source<A, unknown> {

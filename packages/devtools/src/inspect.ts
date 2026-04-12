@@ -5,7 +5,7 @@
  * (source, sources, f, predicate, n, etc.) to reconstruct the pipeline.
  */
 
-import type { Event as PulseEvent } from "@pulse/types";
+import type { Event as PulseEvent } from "aeon-types";
 import { getLabel } from "./label.js";
 
 /** A node in the stream graph tree. */
@@ -78,9 +78,9 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     TapSource: "tap",
     ScanSource: "scan",
     TakeSource: "take",
-    SkipSource: "skip",
+    DropSource: "drop",
     TakeWhileSource: "takeWhile",
-    SkipWhileSource: "skipWhile",
+    DropWhileSource: "dropWhile",
     UntilSource: "until",
     SinceSource: "since",
     MergeSource: "merge",
@@ -88,7 +88,7 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     ZipSource: "zip",
     SwitchSource: "switchLatest",
     MergeMapSource: "mergeMap",
-    MapAsyncSource: "mapAsync",
+    TraverseSource: "traverse",
     ChainSource: "chain",
     CatchErrorSource: "catchError",
     MapErrorSource: "mapError",
@@ -116,20 +116,20 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     FromPromiseSource: "fromPromise",
     RetrySource: "retry",
     ShareSource: "share",
-    WithLatestFromSource: "withLatestFrom",
-    DistinctUntilChangedSource: "distinctUntilChanged",
-    StartWithSource: "startWith",
+    AttachSource: "attach",
+    DedupeSource: "dedupe",
+    ConsSource: "cons",
     FirstSource: "first",
     LastSource: "last",
     PairwiseSource: "pairwise",
     TimeoutSource: "timeout",
     ExhaustMapSource: "exhaustMap",
     ForkJoinSource: "forkJoin",
-    DefaultIfEmptySource: "defaultIfEmpty",
-    FinalizeSource: "finalize",
+    OrElseSource: "orElse",
+    EnsureSource: "ensure",
     RaceSource: "race",
     CountSource: "count",
-    EverySource: "every",
+    AllSource: "all",
     ElementAtSource: "elementAt",
     RangeSource: "range",
     ConstantSource: "constant",

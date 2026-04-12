@@ -1,16 +1,16 @@
 /**
- * distinctUntilChanged combinator.
+ * dedupe combinator.
  *
  * Denotation: suppress consecutive duplicate values.
- * `distinctUntilChanged(eq, e) = [(t, v) | (t, v) ∈ e, v ≠ prev]`
+ * `dedupe(eq, e) = [(t, v) | (t, v) ∈ e, v ≠ prev]`
  * where `prev` is the most recently emitted value.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { Pipe } from "../internal/Pipe.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class DistinctUntilChangedSink<A, E> extends Pipe<A, E> {
+class DedupeSink<A, E> extends Pipe<A, E> {
   declare readonly eq: (a: A, b: A) => boolean;
   declare prev: A | typeof UNSET;
 
@@ -30,7 +30,7 @@ class DistinctUntilChangedSink<A, E> extends Pipe<A, E> {
 
 const UNSET: unique symbol = Symbol("unset");
 
-class DistinctUntilChangedSource<A, E> implements Source<A, E> {
+class DedupeSource<A, E> implements Source<A, E> {
   declare readonly eq: (a: A, b: A) => boolean;
   declare readonly source: Source<A, E>;
 
@@ -40,7 +40,7 @@ class DistinctUntilChangedSource<A, E> implements Source<A, E> {
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    return this.source.run(new DistinctUntilChangedSink(this.eq, sink), scheduler);
+    return this.source.run(new DedupeSink(this.eq, sink), scheduler);
   }
 }
 
@@ -52,7 +52,7 @@ const defaultEq = <A>(a: A, b: A): boolean => a === b;
  * Denotation: emits a value only when it differs from the previous
  * emission, according to the provided equality function (defaults to `===`).
  */
-export const distinctUntilChanged = <A, E>(
+export const dedupe = <A, E>(
   event: Event<A, E>,
   eq: (a: A, b: A) => boolean = defaultEq,
-): Event<A, E> => _createEvent(new DistinctUntilChangedSource(eq, _getSource(event)));
+): Event<A, E> => _createEvent(new DedupeSource(eq, _getSource(event)));

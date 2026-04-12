@@ -9,7 +9,7 @@
  * This matches @most/core's approach where Stream = Source at runtime.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source } from "aeon-types";
 
 /** A Source that supports synchronous iteration (sync loop compilation). */
 export interface SyncSource<A, E = never> extends Source<A, E> {

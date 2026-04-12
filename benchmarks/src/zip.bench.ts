@@ -8,8 +8,8 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { drain, fromArray, zip } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, fromArray, zip } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import { zip as mostZip, runEffects } from "@most/core";

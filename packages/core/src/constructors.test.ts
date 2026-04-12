@@ -1,5 +1,5 @@
-import { type Time, toDuration, toTime } from "@pulse/types";
-import type { Sink } from "@pulse/types";
+import { type Time, toDuration, toTime } from "aeon-types";
+import type { Sink } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { at, empty, fromArray, fromIterable, never, now, periodic } from "./constructors.js";
 import { _getSource } from "./internal/event.js";

@@ -8,8 +8,8 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { drain, fromArray, map, switchLatest } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, fromArray, map, switchLatest } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import { map as mostMap, switchLatest as mostSwitchLatest, runEffects } from "@most/core";

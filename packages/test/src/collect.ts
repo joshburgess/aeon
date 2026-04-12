@@ -5,7 +5,7 @@
  * as a structured list of timed entries for assertion.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "aeon-types";
 
 /** A collected event entry (value, error, or end). */
 export type CollectedEntry<A, E = never> =

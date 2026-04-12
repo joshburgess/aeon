@@ -27,13 +27,13 @@ import {
   fromArray,
   map,
   merge,
-  mergeMapConcurrently,
   multicast,
+  mergeMap as pulseMergeMap,
   scan,
   switchLatest,
   take,
-} from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+} from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import {
@@ -279,7 +279,7 @@ describe("mergeMap: 1k outer × 100 inner (100k total events)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
     await drain(
-      mergeMapConcurrently(() => fromArray(innerArr), Number.POSITIVE_INFINITY, fromArray(outer)),
+      pulseMergeMap(() => fromArray(innerArr), Number.POSITIVE_INFINITY, fromArray(outer)),
       scheduler,
     );
   });

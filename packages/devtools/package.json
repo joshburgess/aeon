@@ -1,14 +1,16 @@
 {
-  "name": "@pulse/devtools",
+  "name": "aeon-devtools",
   "version": "0.0.1",
-  "description": "Debug instrumentation for Pulse reactive streams",
+  "description": "Debug instrumentation for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/pulse",
+    "url": "https://github.com/joshburgess/aeon",
     "directory": "packages/devtools"
   },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
   "keywords": ["reactive", "streams", "frp", "devtools", "debugging", "tracing"],
   "type": "module",
   "sideEffects": false,
@@ -35,8 +37,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@pulse/types": "workspace:*",
-    "@pulse/core": "workspace:*"
+    "aeon-types": "workspace:*",
+    "aeon-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

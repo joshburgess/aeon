@@ -1,15 +1,15 @@
 /**
- * finalize combinator.
+ * ensure combinator.
  *
  * Denotation: run a side-effect function when the stream ends or errors.
  * The cleanup runs exactly once.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { Pipe } from "../internal/Pipe.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class FinalizeSink<A, E> extends Pipe<A, E> {
+class EnsureSink<A, E> extends Pipe<A, E> {
   declare readonly cleanup: () => void;
   declare called: boolean;
 
@@ -41,7 +41,7 @@ class FinalizeSink<A, E> extends Pipe<A, E> {
   }
 }
 
-class FinalizeSource<A, E> implements Source<A, E> {
+class EnsureSource<A, E> implements Source<A, E> {
   declare readonly cleanup: () => void;
   declare readonly source: Source<A, E>;
 
@@ -51,11 +51,11 @@ class FinalizeSource<A, E> implements Source<A, E> {
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    const finalizeSink = new FinalizeSink(this.cleanup, sink);
-    const d = this.source.run(finalizeSink, scheduler);
+    const ensureSink = new EnsureSink(this.cleanup, sink);
+    const d = this.source.run(ensureSink, scheduler);
     return {
       dispose() {
-        finalizeSink.runCleanup();
+        ensureSink.runCleanup();
         d.dispose();
       },
     };
@@ -66,5 +66,5 @@ class FinalizeSource<A, E> implements Source<A, E> {
  * Run a cleanup function when the stream ends, errors, or is disposed.
  * The cleanup runs exactly once regardless of which termination path fires.
  */
-export const finalize = <A, E>(cleanup: () => void, event: Event<A, E>): Event<A, E> =>
-  _createEvent(new FinalizeSource(cleanup, _getSource(event)));
+export const ensure = <A, E>(cleanup: () => void, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new EnsureSource(cleanup, _getSource(event)));

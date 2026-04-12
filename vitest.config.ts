@@ -4,12 +4,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@pulse/types": path.resolve(__dirname, "packages/types/src/index.ts"),
-      "@pulse/core": path.resolve(__dirname, "packages/core/src/index.ts"),
-      "@pulse/scheduler": path.resolve(__dirname, "packages/scheduler/src/index.ts"),
-      "@pulse/test": path.resolve(__dirname, "packages/test/src/index.ts"),
-      "@pulse/dom": path.resolve(__dirname, "packages/dom/src/index.ts"),
-      "@pulse/devtools": path.resolve(__dirname, "packages/devtools/src/index.ts"),
+      "aeon-types": path.resolve(__dirname, "packages/types/src/index.ts"),
+      "aeon-core": path.resolve(__dirname, "packages/core/src/index.ts"),
+      "aeon-scheduler": path.resolve(__dirname, "packages/scheduler/src/index.ts"),
+      "aeon-test": path.resolve(__dirname, "packages/test/src/index.ts"),
+      "aeon-dom": path.resolve(__dirname, "packages/dom/src/index.ts"),
+      "aeon-devtools": path.resolve(__dirname, "packages/devtools/src/index.ts"),
     },
   },
   test: {

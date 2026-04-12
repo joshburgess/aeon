@@ -1,5 +1,5 @@
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Behavior, type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Behavior, type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import {
   accumB,

@@ -5,8 +5,8 @@
 
 import { bench, describe } from "vitest";
 
-import { drain, filter, fromArray, map, reduce } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, filter, fromArray, map, reduce } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
 import { newStream } from "@most/core";

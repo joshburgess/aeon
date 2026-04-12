@@ -6,7 +6,7 @@
  * Includes fusion: scan(f, seed, map(g, s)) → scanMap with composed function.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _EMPTY_SOURCE, _EmptySource } from "../constructors.js";
 import { Pipe } from "../internal/Pipe.js";
 import { type SyncSource, _createEvent, _getSource } from "../internal/event.js";

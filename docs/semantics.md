@@ -1,6 +1,6 @@
 # Denotational Semantics
 
-This document defines the mathematical meaning of every type and combinator in Pulse. The implementation may differ for performance, but must be **observationally equivalent** to the denotation stated here.
+This document defines the mathematical meaning of every type and combinator in Aeon. The implementation may differ for performance, but must be **observationally equivalent** to the denotation stated here.
 
 ## Core Types
 
@@ -73,10 +73,10 @@ Unlike Events, Behaviors have a value at every point in time. They are evaluated
 | Combinator | Denotation |
 |---|---|
 | `take(n, e)` | First `n` values of `e`, then end |
-| `skip(n, e)` | Drop first `n` values, then all remaining |
+| `drop(n, e)` | Drop first `n` values, then all remaining |
 | `takeWhile(p, e)` | Values while `p(v)` holds, then end |
-| `skipWhile(p, e)` | Drop while `p(v)` holds, then all remaining |
-| `slice(s, end, e)` | `take(end - s, skip(s, e))` |
+| `dropWhile(p, e)` | Drop while `p(v)` holds, then all remaining |
+| `slice(s, end, e)` | `take(end - s, drop(s, e))` |
 | `until(signal, e)` | `[(t, v) \| (t, v) ∈ e, t < t_signal]` |
 | `since(signal, e)` | `[(t, v) \| (t, v) ∈ e, t ≥ t_signal]` |
 
@@ -94,8 +94,8 @@ Unlike Events, Behaviors have a value at every point in time. They are evaluated
 |---|---|
 | `switchLatest(ee)` | At each `(t, inner) ∈ ee`, switch to `inner`. Only the latest inner stream's values propagate. |
 | `chain(f, e)` | `concat [f(v) \| (t, v) ∈ e]` — sequential flatMap |
-| `mergeMapConcurrently(f, c, e)` | Like `merge(map(f, e))` but with at most `c` active inner streams |
-| `mapAsync(f, c, e)` | `[(t, await f(v)) \| (t, v) ∈ e]` with bounded concurrency `c` |
+| `mergeMap(f, c, e)` | Like `merge(map(f, e))` but with at most `c` active inner streams |
+| `traverse(f, c, e)` | `[(t, await f(v)) \| (t, v) ∈ e]` with bounded concurrency `c` |
 
 ### Error Handling
 
@@ -158,7 +158,7 @@ Unlike Events, Behaviors have a value at every point in time. They are evaluated
 
 ## Pipeline Fusion
 
-At construction time, Pulse detects and collapses fusible patterns. These are observationally equivalent to the unfused forms:
+At construction time, Aeon detects and collapses fusible patterns. These are observationally equivalent to the unfused forms:
 
 | Pattern | Fused Form |
 |---|---|
@@ -168,7 +168,7 @@ At construction time, Pulse detects and collapses fusible patterns. These are ob
 | `filter(p, map(f, s))` | `mapFilter(f, p, s)` |
 | `scan(f, seed, map(g, s))` | `scan((acc, x) → f(acc, g(x)), seed, s)` |
 | `take(n, take(m, s))` | `take(min(n, m), s)` |
-| `skip(n, skip(m, s))` | `skip(n + m, s)` |
+| `drop(n, drop(m, s))` | `drop(n + m, s)` |
 | `merge(a, merge(b, c))` | `merge(a, b, c)` |
 
 Algebraic simplifications on trivial sources:

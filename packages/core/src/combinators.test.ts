@@ -1,34 +1,34 @@
-import { type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
-import { count, elementAt, every } from "./combinators/aggregate.js";
+import { all, count, elementAt } from "./combinators/aggregate.js";
+import { attach } from "./combinators/attach.js";
 import { chain } from "./combinators/chain.js";
 import { combine, zip } from "./combinators/combine.js";
+import { cons } from "./combinators/cons.js";
 import { constant } from "./combinators/constant.js";
-import { defaultIfEmpty } from "./combinators/defaultIfEmpty.js";
-import { distinctUntilChanged } from "./combinators/distinctUntilChanged.js";
+import { dedupe } from "./combinators/dedupe.js";
+import { ensure } from "./combinators/ensure.js";
 import { catchError, mapError, throwError } from "./combinators/error.js";
 import { exhaustMap } from "./combinators/exhaustMap.js";
 import { filter } from "./combinators/filter.js";
-import { finalize } from "./combinators/finalize.js";
 import { first, last } from "./combinators/firstLast.js";
 import { forkJoin } from "./combinators/forkJoin.js";
 import { fromPromise } from "./combinators/fromPromise.js";
 import { map } from "./combinators/map.js";
-import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
-import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { mergeMap } from "./combinators/mergeMap.js";
+import { orElse } from "./combinators/orElse.js";
 import { pairwise } from "./combinators/pairwise.js";
 import { race } from "./combinators/race.js";
 import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
 import { share } from "./combinators/share.js";
-import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
-import { startWith } from "./combinators/startWith.js";
+import { drop, dropWhile, since, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { TimeoutError, timeout } from "./combinators/timeout.js";
-import { withLatestFrom } from "./combinators/withLatestFrom.js";
+import { traverse } from "./combinators/traverse.js";
 import { empty, fromArray, never, now, range } from "./constructors.js";
 import { _createEvent, _getSource } from "./internal/event.js";
 import { TestScheduler } from "./internal/testScheduler.js";
@@ -184,16 +184,16 @@ describe("take", () => {
   });
 });
 
-describe("skip", () => {
-  it("skips the first n values", () => {
+describe("drop", () => {
+  it("drops the first n values", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(skip(2, fromArray([1, 2, 3, 4, 5])), scheduler);
+    const result = collectSync<number>(drop(2, fromArray([1, 2, 3, 4, 5])), scheduler);
     expect(result).toEqual([3, 4, 5]);
   });
 
-  it("skip(0) passes all through", () => {
+  it("drop(0) passes all through", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(skip(0, fromArray([1, 2, 3])), scheduler);
+    const result = collectSync<number>(drop(0, fromArray([1, 2, 3])), scheduler);
     expect(result).toEqual([1, 2, 3]);
   });
 });
@@ -209,11 +209,11 @@ describe("takeWhile", () => {
   });
 });
 
-describe("skipWhile", () => {
-  it("skips values while predicate holds", () => {
+describe("dropWhile", () => {
+  it("drops values while predicate holds", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(
-      skipWhile((x: number) => x < 3, fromArray([1, 2, 3, 4, 5])),
+      dropWhile((x: number) => x < 3, fromArray([1, 2, 3, 4, 5])),
       scheduler,
     );
     expect(result).toEqual([3, 4, 5]);
@@ -505,11 +505,11 @@ describe("switchLatest", () => {
   });
 });
 
-describe("mergeMapConcurrently", () => {
+describe("mergeMap", () => {
   it("maps and merges with concurrency", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(
-      mergeMapConcurrently(
+      mergeMap(
         (x: number) => fromArray([x * 10, x * 10 + 1]),
         Number.POSITIVE_INFINITY,
         fromArray([1, 2]),
@@ -645,13 +645,13 @@ describe("filter -> map -> reduce pipeline", () => {
   });
 });
 
-describe("mapAsync", () => {
+describe("traverse", () => {
   it("applies an async function to each value", async () => {
     const scheduler = new TestScheduler();
     const event = fromArray([1, 2, 3]);
     const result: number[] = [];
 
-    const mapped = mapAsync(async (x: number) => x * 10, Number.POSITIVE_INFINITY, event);
+    const mapped = traverse(async (x: number) => x * 10, Number.POSITIVE_INFINITY, event);
 
     await new Promise<void>((resolve) => {
       _getSource(mapped).run(
@@ -678,7 +678,7 @@ describe("mapAsync", () => {
     const resolvers: Array<(v: number) => void> = [];
 
     const event = fromArray([1, 2, 3, 4]);
-    const mapped = mapAsync(
+    const mapped = traverse(
       (x: number) =>
         new Promise<number>((resolve) => {
           concurrent++;
@@ -730,7 +730,7 @@ describe("mapAsync", () => {
   it("propagates async errors", async () => {
     const scheduler = new TestScheduler();
     const event = fromArray([1]);
-    const mapped = mapAsync(
+    const mapped = traverse(
       async (_x: number) => {
         throw new Error("boom");
       },
@@ -938,7 +938,7 @@ describe("share", () => {
   });
 });
 
-describe("withLatestFrom", () => {
+describe("attach", () => {
   it("combines latest value from sampled with each sampler emission", () => {
     const scheduler = new TestScheduler();
     // sampled emits 10, 20; sampler emits "a", "b"
@@ -964,7 +964,7 @@ describe("withLatestFrom", () => {
 
     const values: string[] = [];
     let ended = false;
-    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+    _getSource(attach((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
       {
         event(_t: Time, v: string) {
           values.push(v);
@@ -1004,7 +1004,7 @@ describe("withLatestFrom", () => {
     const sampler = fromArray(["a", "b", "c"]);
 
     const values: unknown[] = [];
-    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+    _getSource(attach((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
       {
         event(_t: Time, v: unknown) {
           values.push(v);
@@ -1024,7 +1024,7 @@ describe("withLatestFrom", () => {
     const sampler = fromArray(["a", "b"]);
 
     const values: string[] = [];
-    _getSource(withLatestFrom((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
+    _getSource(attach((n: number, s: string) => `${n}-${s}`, sampled, sampler)).run(
       {
         event(_t: Time, v: string) {
           values.push(v);
@@ -1045,26 +1045,23 @@ describe("withLatestFrom", () => {
 // Tier 1 operators
 // ============================================================
 
-describe("distinctUntilChanged", () => {
+describe("dedupe", () => {
   it("suppresses consecutive duplicates", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(
-      distinctUntilChanged(fromArray([1, 1, 2, 2, 2, 3, 1, 1])),
-      scheduler,
-    );
+    const result = collectSync<number>(dedupe(fromArray([1, 1, 2, 2, 2, 3, 1, 1])), scheduler);
     expect(result).toEqual([1, 2, 3, 1]);
   });
 
   it("passes all values when none are consecutive duplicates", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(distinctUntilChanged(fromArray([1, 2, 3, 4])), scheduler);
+    const result = collectSync<number>(dedupe(fromArray([1, 2, 3, 4])), scheduler);
     expect(result).toEqual([1, 2, 3, 4]);
   });
 
   it("uses custom equality function", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<{ id: number; name: string }>(
-      distinctUntilChanged(
+      dedupe(
         fromArray([
           { id: 1, name: "a" },
           { id: 1, name: "b" },
@@ -1082,21 +1079,21 @@ describe("distinctUntilChanged", () => {
 
   it("emits single value unchanged", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(distinctUntilChanged(fromArray([42])), scheduler);
+    const result = collectSync<number>(dedupe(fromArray([42])), scheduler);
     expect(result).toEqual([42]);
   });
 });
 
-describe("startWith", () => {
+describe("cons", () => {
   it("prepends a value before the stream", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(startWith(0, fromArray([1, 2, 3])), scheduler);
+    const result = collectSync<number>(cons(0, fromArray([1, 2, 3])), scheduler);
     expect(result).toEqual([0, 1, 2, 3]);
   });
 
   it("works with empty stream", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(startWith(42, empty()), scheduler);
+    const result = collectSync<number>(cons(42, empty()), scheduler);
     expect(result).toEqual([42]);
   });
 });
@@ -1171,13 +1168,6 @@ describe("pairwise", () => {
   });
 });
 
-describe("concatMap (chain alias)", () => {
-  it("concatMap is chain", async () => {
-    const { concatMap } = await import("./combinators/index.js");
-    expect(concatMap).toBe(chain);
-  });
-});
-
 // ============================================================
 // Tier 2 operators
 // ============================================================
@@ -1237,32 +1227,32 @@ describe("forkJoin", () => {
   });
 });
 
-describe("defaultIfEmpty", () => {
+describe("orElse", () => {
   it("emits default when stream is empty", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(defaultIfEmpty(42, empty()), scheduler);
+    const result = collectSync<number>(orElse(42, empty()), scheduler);
     expect(result).toEqual([42]);
   });
 
   it("passes through values when stream is not empty", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(defaultIfEmpty(42, fromArray([1, 2, 3])), scheduler);
+    const result = collectSync<number>(orElse(42, fromArray([1, 2, 3])), scheduler);
     expect(result).toEqual([1, 2, 3]);
   });
 
   it("passes through single value unchanged", () => {
     const scheduler = new TestScheduler();
-    const result = collectSync<number>(defaultIfEmpty(99, now(1)), scheduler);
+    const result = collectSync<number>(orElse(99, now(1)), scheduler);
     expect(result).toEqual([1]);
   });
 });
 
-describe("finalize", () => {
+describe("ensure", () => {
   it("runs cleanup on end", () => {
     const scheduler = new TestScheduler();
     let cleaned = false;
     collectSync<number>(
-      finalize(
+      ensure(
         () => {
           cleaned = true;
         },
@@ -1277,7 +1267,7 @@ describe("finalize", () => {
     const scheduler = new TestScheduler();
     let cleaned = false;
     const d = _getSource(
-      finalize(() => {
+      ensure(() => {
         cleaned = true;
       }, never()),
     ).run({ event() {}, error() {}, end() {} }, scheduler);
@@ -1290,7 +1280,7 @@ describe("finalize", () => {
     const scheduler = new TestScheduler();
     let count = 0;
     const d = _getSource(
-      finalize(
+      ensure(
         () => {
           count++;
         },
@@ -1341,11 +1331,11 @@ describe("count", () => {
   });
 });
 
-describe("every", () => {
+describe("all", () => {
   it("emits true when all match", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<boolean>(
-      every((x: number) => x > 0, fromArray([1, 2, 3])),
+      all((x: number) => x > 0, fromArray([1, 2, 3])),
       scheduler,
     );
     expect(result).toEqual([true]);
@@ -1354,7 +1344,7 @@ describe("every", () => {
   it("emits false as soon as one fails", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<boolean>(
-      every((x: number) => x > 0, fromArray([1, -1, 3])),
+      all((x: number) => x > 0, fromArray([1, -1, 3])),
       scheduler,
     );
     expect(result).toEqual([false]);
@@ -1363,7 +1353,7 @@ describe("every", () => {
   it("emits true for empty stream", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<boolean>(
-      every((x: number) => x > 0, empty()),
+      all((x: number) => x > 0, empty()),
       scheduler,
     );
     expect(result).toEqual([true]);

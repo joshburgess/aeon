@@ -5,7 +5,7 @@
  * primitives but are common enough to justify named combinators.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { Pipe } from "../internal/Pipe.js";
 import { SettableDisposable } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
@@ -55,9 +55,9 @@ class CountSource<A, E> implements Source<number, E> {
 export const count = <A, E>(event: Event<A, E>): Event<number, E> =>
   _createEvent(new CountSource(_getSource(event)));
 
-// --- every ---
+// --- all ---
 
-class EverySink<A, E> extends Pipe<boolean, E> {
+class AllSink<A, E> extends Pipe<boolean, E> {
   declare readonly predicate: (a: A) => boolean;
   declare result: boolean;
 
@@ -84,7 +84,7 @@ class EverySink<A, E> extends Pipe<boolean, E> {
   }
 }
 
-class EverySource<A, E> implements Source<boolean, E> {
+class AllSource<A, E> implements Source<boolean, E> {
   declare readonly predicate: (a: A) => boolean;
   declare readonly source: Source<A, E>;
 
@@ -94,7 +94,7 @@ class EverySource<A, E> implements Source<boolean, E> {
   }
 
   run(sink: Sink<boolean, E>, scheduler: Scheduler): Disposable {
-    return this.source.run(new EverySink(this.predicate, sink) as unknown as Sink<A, E>, scheduler);
+    return this.source.run(new AllSink(this.predicate, sink) as unknown as Sink<A, E>, scheduler);
   }
 }
 
@@ -102,10 +102,10 @@ class EverySource<A, E> implements Source<boolean, E> {
  * Emit `true` when the stream ends if all values matched the predicate,
  * or `false` as soon as one fails.
  *
- * Denotation: `every(p, e) = [(t, ∀v ∈ e. p(v))]`
+ * Denotation: `all(p, e) = [(t, ∀v ∈ e. p(v))]`
  */
-export const every = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>): Event<boolean, E> =>
-  _createEvent(new EverySource(predicate, _getSource(event)));
+export const all = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>): Event<boolean, E> =>
+  _createEvent(new AllSource(predicate, _getSource(event)));
 
 // --- elementAt ---
 

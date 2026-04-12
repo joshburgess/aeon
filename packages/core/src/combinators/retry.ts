@@ -7,7 +7,7 @@
  * Uses monomorphic Sink/Source classes for V8 hidden class stability.
  */
 
-import type { Disposable, Duration, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Duration, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { SettableDisposable } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 

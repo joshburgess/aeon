@@ -5,7 +5,7 @@
  * The stream's values pass through unchanged.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "aeon-types";
 import { getLabel } from "./label.js";
 
 /** Options for trace output. */

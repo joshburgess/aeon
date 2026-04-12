@@ -1,14 +1,16 @@
 {
-  "name": "@pulse/test",
+  "name": "aeon-test",
   "version": "0.0.1",
-  "description": "Marble testing utilities for Pulse reactive streams",
+  "description": "Marble testing utilities for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/pulse",
+    "url": "https://github.com/joshburgess/aeon",
     "directory": "packages/test"
   },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
   "keywords": ["reactive", "streams", "frp", "testing", "marble", "virtual-scheduler"],
   "type": "module",
   "sideEffects": false,
@@ -35,9 +37,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@pulse/types": "workspace:*",
-    "@pulse/core": "workspace:*",
-    "@pulse/scheduler": "workspace:*"
+    "aeon-types": "workspace:*",
+    "aeon-core": "workspace:*",
+    "aeon-scheduler": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

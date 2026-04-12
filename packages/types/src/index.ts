@@ -1,4 +1,4 @@
-// @pulse/types — Core interfaces, HKT encoding, branded types
+// aeon-types — Core interfaces, HKT encoding, branded types
 
 export {
   type Time,

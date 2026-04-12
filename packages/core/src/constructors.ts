@@ -15,7 +15,7 @@ import {
   type Source,
   type Time,
   timeAdd,
-} from "@pulse/types";
+} from "aeon-types";
 import { disposeNone } from "./internal/dispose.js";
 import { _createEvent } from "./internal/event.js";
 

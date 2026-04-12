@@ -7,7 +7,7 @@
  * a composed function. map∘filter becomes a filterMap node.
  */
 
-import type { Event } from "@pulse/types";
+import type { Event } from "aeon-types";
 import { fusedMap } from "../internal/fusion.js";
 
 /**

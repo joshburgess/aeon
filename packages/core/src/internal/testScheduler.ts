@@ -1,8 +1,8 @@
 /**
  * Minimal synchronous test scheduler.
  *
- * This is an internal utility for testing @pulse/core. The full
- * VirtualScheduler lives in @pulse/test. This one just tracks
+ * This is an internal utility for testing aeon-core. The full
+ * VirtualScheduler lives in aeon-test. This one just tracks
  * "current time" and executes tasks synchronously in order.
  */
 
@@ -17,7 +17,7 @@ import {
   timeAdd,
   timeShift,
   toTime,
-} from "@pulse/types";
+} from "aeon-types";
 
 interface PendingTask {
   readonly time: Time;

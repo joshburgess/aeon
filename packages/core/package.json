@@ -1,14 +1,16 @@
 {
-  "name": "@pulse/core",
+  "name": "aeon-core",
   "version": "0.0.1",
   "description": "Denotationally-designed reactive streams for TypeScript",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/pulse",
+    "url": "https://github.com/joshburgess/aeon",
     "directory": "packages/core"
   },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
   "keywords": ["reactive", "streams", "frp", "functional", "event", "behavior", "observable"],
   "type": "module",
   "sideEffects": false,
@@ -35,7 +37,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@pulse/types": "workspace:*"
+    "aeon-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

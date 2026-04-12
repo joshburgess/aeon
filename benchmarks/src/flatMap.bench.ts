@@ -7,8 +7,8 @@
 import { bench, describe } from "vitest";
 
 // --- Pulse ---
-import { chain, drain, fromArray } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { chain, drain, fromArray } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import { chain as mostChain, runEffects } from "@most/core";

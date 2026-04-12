@@ -2,7 +2,7 @@
  * Assertion helpers for marble-based stream testing.
  */
 
-import type { Time } from "@pulse/types";
+import type { Time } from "aeon-types";
 import type { CollectedEntry } from "./collect.js";
 import type { MarbleEntry } from "./marble.js";
 

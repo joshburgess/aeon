@@ -5,7 +5,7 @@
  *   pipe(event, P.map(f), P.filter(p), P.take(10))
  */
 
-import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
+import type { Behavior, Duration, Event, Scheduler } from "aeon-types";
 import {
   derivative as derivativeDirect,
   integral as integralDirect,
@@ -16,39 +16,39 @@ import {
   switchB as switchBDirect,
 } from "./behavior.js";
 import {
+  all as allDirect,
   count as countDirect,
   elementAt as elementAtDirect,
-  every as everyDirect,
 } from "./combinators/aggregate.js";
+import { attach as attachDirect } from "./combinators/attach.js";
 import { chain as chainDirect } from "./combinators/chain.js";
 import { combine as combineDirect, zip as zipDirect } from "./combinators/combine.js";
+import { cons as consDirect } from "./combinators/cons.js";
 import { constant as constantDirect } from "./combinators/constant.js";
-import { defaultIfEmpty as defaultIfEmptyDirect } from "./combinators/defaultIfEmpty.js";
-import { distinctUntilChanged as distinctUntilChangedDirect } from "./combinators/distinctUntilChanged.js";
+import { dedupe as dedupeDirect } from "./combinators/dedupe.js";
+import { ensure as ensureDirect } from "./combinators/ensure.js";
 import { catchError as catchErrorDirect, mapError as mapErrorDirect } from "./combinators/error.js";
 import { exhaustMap as exhaustMapDirect } from "./combinators/exhaustMap.js";
 import { filter as filterDirect } from "./combinators/filter.js";
-import { finalize as finalizeDirect } from "./combinators/finalize.js";
 import { first as firstDirect, last as lastDirect } from "./combinators/firstLast.js";
 import { forkJoin as forkJoinDirect } from "./combinators/forkJoin.js";
 import { map as mapDirect } from "./combinators/map.js";
-import { mapAsync as mapAsyncDirect } from "./combinators/mapAsync.js";
 import { merge as mergeDirect } from "./combinators/merge.js";
-import { mergeMapConcurrently as mergeMapDirect } from "./combinators/mergeMap.js";
+import { mergeMap as mergeMapDirect } from "./combinators/mergeMap.js";
+import { orElse as orElseDirect } from "./combinators/orElse.js";
 import { pairwise as pairwiseDirect } from "./combinators/pairwise.js";
 import { retry as retryDirect } from "./combinators/retry.js";
 import { scan as scanDirect } from "./combinators/scan.js";
 import { share as shareDirect } from "./combinators/share.js";
 import {
+  drop as dropDirect,
+  dropWhile as dropWhileDirect,
   since as sinceDirect,
-  skip as skipDirect,
-  skipWhile as skipWhileDirect,
   slice as sliceDirect,
   take as takeDirect,
   takeWhile as takeWhileDirect,
   until as untilDirect,
 } from "./combinators/slice.js";
-import { startWith as startWithDirect } from "./combinators/startWith.js";
 import { switchLatest as switchLatestDirect } from "./combinators/switch.js";
 import { tap as tapDirect } from "./combinators/tap.js";
 import {
@@ -64,7 +64,7 @@ import {
   throttle as throttleDirect,
 } from "./combinators/time.js";
 import { timeout as timeoutDirect } from "./combinators/timeout.js";
-import { withLatestFrom as withLatestFromDirect } from "./combinators/withLatestFrom.js";
+import { traverse as traverseDirect } from "./combinators/traverse.js";
 
 // --- Event operators ---
 
@@ -98,20 +98,20 @@ export const take =
   <A, E>(event: Event<A, E>): Event<A, E> =>
     takeDirect(n, event);
 
-export const skip =
+export const drop =
   (n: number) =>
   <A, E>(event: Event<A, E>): Event<A, E> =>
-    skipDirect(n, event);
+    dropDirect(n, event);
 
 export const takeWhile =
   <A>(predicate: (a: A) => boolean) =>
   <E>(event: Event<A, E>): Event<A, E> =>
     takeWhileDirect(predicate, event);
 
-export const skipWhile =
+export const dropWhile =
   <A>(predicate: (a: A) => boolean) =>
   <E>(event: Event<A, E>): Event<A, E> =>
-    skipWhileDirect(predicate, event);
+    dropWhileDirect(predicate, event);
 
 export const slice =
   (start: number, end: number) =>
@@ -123,7 +123,7 @@ export const chain =
   (event: Event<A, E>): Event<B, E> =>
     chainDirect(f, event);
 
-export const mergeMapConcurrently =
+export const mergeMap =
   <A, B, E>(f: (a: A) => Event<B, E>, concurrency: number) =>
   (event: Event<A, E>): Event<B, E> =>
     mergeMapDirect(f, concurrency, event);
@@ -138,10 +138,10 @@ export const mapError =
   <A>(event: Event<A, E1>): Event<A, E2> =>
     mapErrorDirect(f, event);
 
-export const mapAsync =
+export const traverse =
   <A, B>(f: (a: A) => Promise<B>, concurrency: number) =>
   <E>(event: Event<A, E>): Event<B, E> =>
-    mapAsyncDirect(f, concurrency, event);
+    traverseDirect(f, concurrency, event);
 
 export const switchLatest = <A, E>(event: Event<Event<A, E>, E>): Event<A, E> =>
   switchLatestDirect(event);
@@ -156,10 +156,10 @@ export const share =
   <A, E>(event: Event<A, E>): Event<A, E> =>
     shareDirect(bufferSize, event);
 
-export const withLatestFrom =
+export const attach =
   <A, B, C, E>(f: (a: A, b: B) => C, sampled: Event<A, E>) =>
   (sampler: Event<B, E>): Event<C, E> =>
-    withLatestFromDirect(f, sampled, sampler);
+    attachDirect(f, sampled, sampler);
 
 export const until =
   <E>(signal: Event<unknown, E>) =>
@@ -171,15 +171,15 @@ export const since =
   <A>(event: Event<A, E>): Event<A, E> =>
     sinceDirect(signal, event);
 
-export const distinctUntilChanged =
+export const dedupe =
   <A>(eq?: (a: A, b: A) => boolean) =>
   <E>(event: Event<A, E>): Event<A, E> =>
-    distinctUntilChangedDirect(event, eq);
+    dedupeDirect(event, eq);
 
-export const startWith =
+export const cons =
   <A>(value: A) =>
   <E>(event: Event<A, E>): Event<A, E> =>
-    startWithDirect(value, event);
+    consDirect(value, event);
 
 export const first =
   <A>(predicate?: (a: A) => boolean) =>
@@ -193,11 +193,6 @@ export const last =
 
 export const pairwise = <A, E>(event: Event<A, E>): Event<[A, A], E> => pairwiseDirect(event);
 
-export const concatMap =
-  <A, B, E>(f: (a: A) => Event<B, E>) =>
-  (event: Event<A, E>): Event<B, E> =>
-    chainDirect(f, event);
-
 export const timeout =
   (duration: Duration) =>
   <A, E>(event: Event<A, E>) =>
@@ -208,22 +203,22 @@ export const exhaustMap =
   (event: Event<A, E>): Event<B, E> =>
     exhaustMapDirect(f, event);
 
-export const defaultIfEmpty =
+export const orElse =
   <A>(value: A) =>
   <E>(event: Event<A, E>): Event<A, E> =>
-    defaultIfEmptyDirect(value, event);
+    orElseDirect(value, event);
 
-export const finalize =
+export const ensure =
   (cleanup: () => void) =>
   <A, E>(event: Event<A, E>): Event<A, E> =>
-    finalizeDirect(cleanup, event);
+    ensureDirect(cleanup, event);
 
 export const count = <A, E>(event: Event<A, E>): Event<number, E> => countDirect(event);
 
-export const every =
+export const all =
   <A>(predicate: (a: A) => boolean) =>
   <E>(event: Event<A, E>): Event<boolean, E> =>
-    everyDirect(predicate, event);
+    allDirect(predicate, event);
 
 export const elementAt =
   (n: number) =>

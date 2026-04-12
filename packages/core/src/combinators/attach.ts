@@ -1,7 +1,7 @@
 /**
- * withLatestFrom combinator.
+ * attach combinator.
  *
- * Denotation: `withLatestFrom(f, sampled, sampler)` emits
+ * Denotation: `attach(f, sampled, sampler)` emits
  * `f(latestA, b)` whenever `sampler` fires, using the latest
  * value from `sampled`. Only emits after `sampled` has produced
  * at least one value.
@@ -9,11 +9,11 @@
  * Uses monomorphic Sink/Source classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { disposeAll } from "../internal/dispose.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class WithLatestFromState<A, B, C, E> {
+class AttachState<A, B, C, E> {
   declare latestA: A | undefined;
   declare hasA: boolean;
   declare readonly sink: Sink<C, E>;
@@ -27,10 +27,10 @@ class WithLatestFromState<A, B, C, E> {
   }
 }
 
-class WithLatestFromSampledSink<A, B, C, E> implements Sink<A, E> {
-  declare readonly state: WithLatestFromState<A, B, C, E>;
+class AttachSampledSink<A, B, C, E> implements Sink<A, E> {
+  declare readonly state: AttachState<A, B, C, E>;
 
-  constructor(state: WithLatestFromState<A, B, C, E>) {
+  constructor(state: AttachState<A, B, C, E>) {
     this.state = state;
   }
 
@@ -48,10 +48,10 @@ class WithLatestFromSampledSink<A, B, C, E> implements Sink<A, E> {
   }
 }
 
-class WithLatestFromSamplerSink<A, B, C, E> implements Sink<B, E> {
-  declare readonly state: WithLatestFromState<A, B, C, E>;
+class AttachSamplerSink<A, B, C, E> implements Sink<B, E> {
+  declare readonly state: AttachState<A, B, C, E>;
 
-  constructor(state: WithLatestFromState<A, B, C, E>) {
+  constructor(state: AttachState<A, B, C, E>) {
     this.state = state;
   }
 
@@ -71,7 +71,7 @@ class WithLatestFromSamplerSink<A, B, C, E> implements Sink<B, E> {
   }
 }
 
-class WithLatestFromSource<A, B, C, E> implements Source<C, E> {
+class AttachSource<A, B, C, E> implements Source<C, E> {
   declare readonly f: (a: A, b: B) => C;
   declare readonly sampled: Source<A, E>;
   declare readonly sampler: Source<B, E>;
@@ -83,10 +83,10 @@ class WithLatestFromSource<A, B, C, E> implements Source<C, E> {
   }
 
   run(sink: Sink<C, E>, scheduler: Scheduler): Disposable {
-    const state = new WithLatestFromState<A, B, C, E>(this.f, sink);
+    const state = new AttachState<A, B, C, E>(this.f, sink);
     return disposeAll([
-      this.sampled.run(new WithLatestFromSampledSink(state), scheduler),
-      this.sampler.run(new WithLatestFromSamplerSink(state), scheduler),
+      this.sampled.run(new AttachSampledSink(state), scheduler),
+      this.sampler.run(new AttachSamplerSink(state), scheduler),
     ]);
   }
 }
@@ -99,9 +99,8 @@ class WithLatestFromSource<A, B, C, E> implements Source<C, E> {
  *
  * The output ends when `sampler` ends. Errors from either source propagate.
  */
-export const withLatestFrom = <A, B, C, E>(
+export const attach = <A, B, C, E>(
   f: (a: A, b: B) => C,
   sampled: Event<A, E>,
   sampler: Event<B, E>,
-): Event<C, E> =>
-  _createEvent(new WithLatestFromSource(f, _getSource(sampled), _getSource(sampler)));
+): Event<C, E> => _createEvent(new AttachSource(f, _getSource(sampled), _getSource(sampler)));

@@ -7,7 +7,7 @@
  * with conjoined predicates. filter∘map becomes a mapFilter node.
  */
 
-import type { Event } from "@pulse/types";
+import type { Event } from "aeon-types";
 import { fusedFilter } from "../internal/fusion.js";
 
 /**

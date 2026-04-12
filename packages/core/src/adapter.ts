@@ -6,7 +6,7 @@
  * RxJS's Subject, but as a clean separated push/pull pair.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types";
 import { _createEvent } from "./internal/event.js";
 
 /**

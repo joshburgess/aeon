@@ -1,6 +1,6 @@
-# Getting Started with Pulse
+# Getting Started with Aeon
 
-Pulse is a reactive programming library for TypeScript built on denotational semantics. It provides two core abstractions:
+Aeon is a reactive programming library for TypeScript built on denotational semantics. It provides two core abstractions:
 
 - **Event** — a discrete stream of time-stamped values (push-based)
 - **Behavior** — a continuous function from time to a value (pull-based)
@@ -8,15 +8,15 @@ Pulse is a reactive programming library for TypeScript built on denotational sem
 ## Installation
 
 ```bash
-pnpm add @pulse/core @pulse/scheduler
+pnpm add aeon-core aeon-scheduler
 ```
 
 Optional packages:
 
 ```bash
-pnpm add @pulse/dom       # DOM event sources, animation frames, mouse/window behaviors
-pnpm add @pulse/test      # Marble testing DSL, virtual scheduler, assertion helpers
-pnpm add @pulse/devtools  # Stream labeling, tracing, graph inspection
+pnpm add aeon-dom       # DOM event sources, animation frames, mouse/window behaviors
+pnpm add aeon-test      # Marble testing DSL, virtual scheduler, assertion helpers
+pnpm add aeon-devtools  # Stream labeling, tracing, graph inspection
 ```
 
 ## Your First Stream
@@ -24,8 +24,8 @@ pnpm add @pulse/devtools  # Stream labeling, tracing, graph inspection
 Create an Event from an array, transform it, and observe the results:
 
 ```typescript
-import { fromArray, map, filter, observe } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, map, filter, observe } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -45,9 +45,9 @@ await observe((value) => console.log(value), evenDoubled).run(scheduler);
 The `pipe` function lets you write pipelines top-to-bottom:
 
 ```typescript
-import { fromArray, pipe, observe } from "@pulse/core";
-import { P } from "@pulse/core"; // pipeable (data-last) overloads
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, pipe, observe } from "aeon-core";
+import { P } from "aeon-core"; // pipeable (data-last) overloads
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -67,8 +67,8 @@ await observe((value) => console.log(value), result).run(scheduler);
 For a chainable style:
 
 ```typescript
-import { fromArray, fluent } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, fluent } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -86,8 +86,8 @@ await fluent(fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
 A Behavior has a value at every point in time. Unlike Events, Behaviors are evaluated lazily when sampled.
 
 ```typescript
-import { constantB, time, mapB, liftA2B, readBehavior } from "@pulse/core";
-import { toTime } from "@pulse/types";
+import { constantB, time, mapB, liftA2B, readBehavior } from "aeon-core";
+import { toTime } from "aeon-types";
 
 // A constant behavior — always returns 10
 const ten = constantB(10);
@@ -111,9 +111,9 @@ console.log(readBehavior(sum, toTime(3))); // 13
 `stepper` creates a Behavior from an Event — it holds the latest emitted value:
 
 ```typescript
-import { fromArray, stepper, sample, observe } from "@pulse/core";
-import { periodic } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, stepper, sample, observe } from "aeon-core";
+import { periodic } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -127,8 +127,8 @@ const sampled = sample(latest, periodic(100));
 `snapshot` combines a Behavior's current value with each Event emission:
 
 ```typescript
-import { fromArray, snapshot, time, observe } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, snapshot, time, observe } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -145,8 +145,8 @@ const withTime = snapshot(
 Events carry a typed error channel `E`. Use `catchError` and `mapError` to handle failures:
 
 ```typescript
-import { throwError, catchError, now, observe } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { throwError, catchError, now, observe } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -162,8 +162,8 @@ When `E = never`, the stream provably cannot fail — no error handling needed.
 ## Accumulating State with `scan`
 
 ```typescript
-import { fromArray, scan, observe } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromArray, scan, observe } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -176,8 +176,8 @@ await observe((v) => console.log(v), sum).run(scheduler);
 ## Time Operators
 
 ```typescript
-import { debounce, throttle, delay } from "@pulse/core";
-import { toDuration } from "@pulse/types";
+import { debounce, throttle, delay } from "aeon-core";
+import { toDuration } from "aeon-types";
 
 // debounce — emit latest after 200ms of silence
 const debounced = debounce(toDuration(200), source);
@@ -191,12 +191,12 @@ const delayed = delay(toDuration(50), source);
 
 ## DOM Events
 
-The `@pulse/dom` package provides Event sources from the DOM:
+The `aeon-dom` package provides Event sources from the DOM:
 
 ```typescript
-import { fromDOMEvent, animationFrames, mousePosition, windowSize } from "@pulse/dom";
-import { map, observe } from "@pulse/core";
-import { DefaultScheduler } from "@pulse/scheduler";
+import { fromDOMEvent, animationFrames, mousePosition, windowSize } from "aeon-dom";
+import { map, observe } from "aeon-core";
+import { DefaultScheduler } from "aeon-scheduler";
 
 const scheduler = new DefaultScheduler();
 
@@ -214,12 +214,12 @@ const size = windowSize(scheduler);        // Behavior<Size>
 
 ## Testing with Marble Diagrams
 
-The `@pulse/test` package provides a marble DSL for declarative stream testing:
+The `aeon-test` package provides a marble DSL for declarative stream testing:
 
 ```typescript
-import { testEvent, collectEvents, assertEvents } from "@pulse/test";
-import { VirtualScheduler } from "@pulse/scheduler";
-import { map, filter } from "@pulse/core";
+import { testEvent, collectEvents, assertEvents } from "aeon-test";
+import { VirtualScheduler } from "aeon-scheduler";
+import { map, filter } from "aeon-core";
 
 const scheduler = new VirtualScheduler();
 
@@ -252,8 +252,8 @@ assertEvents(collected.events, [
 Label, trace, and inspect your stream graphs:
 
 ```typescript
-import { label, trace, inspect } from "@pulse/devtools";
-import { fromArray, map, filter, merge } from "@pulse/core";
+import { label, trace, inspect } from "aeon-devtools";
+import { fromArray, map, filter, merge } from "aeon-core";
 
 // Label streams for debugging
 const clicks = label("user-clicks", fromDOMEvent("click", document));
@@ -269,13 +269,13 @@ const tree = inspect(pipeline);
 
 ## Pipeline Fusion
 
-Pulse automatically fuses adjacent operators at construction time. These are transparent optimizations — the fused pipelines are observationally equivalent to the unfused forms:
+Aeon automatically fuses adjacent operators at construction time. These are transparent optimizations — the fused pipelines are observationally equivalent to the unfused forms:
 
 - `map(f, map(g, s))` fuses to `map(f . g, s)`
 - `filter(p, filter(q, s))` fuses to `filter(x => q(x) && p(x), s)`
 - `map(f, filter(p, s))` fuses to `filterMap(p, f, s)`
 - `take(n, take(m, s))` fuses to `take(min(n, m), s)`
-- `skip(n, skip(m, s))` fuses to `skip(n + m, s)`
+- `drop(n, drop(m, s))` fuses to `drop(n + m, s)`
 
 No configuration needed — these happen automatically.
 
@@ -306,19 +306,19 @@ No configuration needed — these happen automatically.
 | `tap(f, e)` | Side-effect without altering values |
 | `constant(v, e)` | Replace all values with `v` |
 | `scan(f, seed, e)` | Running accumulation |
-| `distinctUntilChanged(e, eq?)` | Suppress consecutive duplicates |
-| `startWith(v, e)` | Prepend an initial value |
+| `dedupe(e, eq?)` | Suppress consecutive duplicates |
+| `cons(v, e)` | Prepend an initial value |
 | `pairwise(e)` | Emit `[prev, curr]` tuples |
-| `defaultIfEmpty(v, e)` | Fallback if stream completes empty |
+| `orElse(v, e)` | Fallback if stream completes empty |
 
 ### Slicing
 
 | Operator | Description |
 |---|---|
 | `take(n, e)` | First `n` values |
-| `skip(n, e)` | Drop first `n` values |
+| `drop(n, e)` | Drop first `n` values |
 | `takeWhile(p, e)` | Take while predicate holds |
-| `skipWhile(p, e)` | Skip while predicate holds |
+| `dropWhile(p, e)` | Drop while predicate holds |
 | `slice(start, end, e)` | Values in index range |
 | `first(e, pred?)` | First value (optionally matching predicate) |
 | `last(e, pred?)` | Final value (optionally matching predicate) |
@@ -335,17 +335,17 @@ No configuration needed — these happen automatically.
 | `zip(a, b)` | Pair values by index |
 | `race(...es)` | First to emit wins, others disposed |
 | `forkJoin(...es)` | Array of final values when all complete |
-| `withLatestFrom(f, sampled, sampler)` | Combine sampler events with latest from sampled |
+| `attach(f, sampled, sampler)` | Combine sampler events with latest from sampled |
 
 ### Higher-order
 
 | Operator | Description |
 |---|---|
-| `chain(f, e)` / `concatMap(f, e)` | Map to inner stream, flatten sequentially |
-| `mergeMapConcurrently(f, n, e)` | Map to inner stream, flatten with concurrency limit |
+| `chain(f, e)` | Map to inner stream, flatten sequentially |
+| `mergeMap(f, n, e)` | Map to inner stream, flatten with concurrency limit |
 | `exhaustMap(f, e)` | Map to inner stream, ignore while inner active |
 | `switchLatest(ee)` | Flatten, cancelling previous inner on new outer |
-| `mapAsync(f, n, e)` | Map to Promise, resolve with concurrency limit |
+| `traverse(f, n, e)` | Map to Promise, resolve with concurrency limit |
 
 ### Error handling
 
@@ -372,7 +372,7 @@ No configuration needed — these happen automatically.
 | Operator | Description |
 |---|---|
 | `count(e)` | Total number of values on end |
-| `every(p, e)` | `true` if all match, `false` on first failure |
+| `all(p, e)` | `true` if all match, `false` on first failure |
 
 ### Terminal (activate the stream)
 
@@ -388,7 +388,7 @@ No configuration needed — these happen automatically.
 |---|---|
 | `multicast(e)` | Share a single subscription |
 | `share(bufferSize, e)` | Share with replay buffer |
-| `finalize(cleanup, e)` | Run cleanup on end/error/dispose |
+| `ensure(cleanup, e)` | Run cleanup on end/error/dispose |
 | `toAsyncIterator(e, scheduler)` | Convert to async iterator |
 
 ### Behavior constructors

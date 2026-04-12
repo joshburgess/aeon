@@ -6,7 +6,7 @@
  * virtual time for testing.
  */
 
-import { type Time, toTime } from "@pulse/types";
+import { type Time, toTime } from "aeon-types";
 
 /** A source of time. */
 export interface Clock {

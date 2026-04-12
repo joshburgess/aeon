@@ -6,7 +6,7 @@
  * operations, and bridged with Events via stepper/sample/snapshot.
  */
 
-import type { Behavior, Disposable, Duration, Event, Scheduler, Sink, Time } from "@pulse/types";
+import type { Behavior, Disposable, Duration, Event, Scheduler, Sink, Time } from "aeon-types";
 import {
   type BehaviorImpl,
   _createBehavior,

@@ -1,5 +1,5 @@
 /**
- * mapAsync combinator.
+ * traverse combinator.
  *
  * Applies an async function to each event value with bounded concurrency.
  * When all concurrency slots are occupied, incoming values are buffered.
@@ -7,10 +7,10 @@
  * Uses monomorphic classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
-class MapAsyncState<A, B, E> {
+class TraverseState<A, B, E> {
   declare readonly sink: Sink<B, E>;
   declare readonly f: (a: A) => Promise<B>;
   declare readonly concurrency: number;
@@ -60,10 +60,10 @@ class MapAsyncState<A, B, E> {
   }
 }
 
-class MapAsyncSink<A, B, E> implements Sink<A, E> {
-  declare readonly state: MapAsyncState<A, B, E>;
+class TraverseSink<A, B, E> implements Sink<A, E> {
+  declare readonly state: TraverseState<A, B, E>;
 
-  constructor(state: MapAsyncState<A, B, E>) {
+  constructor(state: TraverseState<A, B, E>) {
     this.state = state;
   }
 
@@ -89,7 +89,7 @@ class MapAsyncSink<A, B, E> implements Sink<A, E> {
   }
 }
 
-class MapAsyncSource<A, B, E> implements Source<B, E> {
+class TraverseSource<A, B, E> implements Source<B, E> {
   declare readonly f: (a: A) => Promise<B>;
   declare readonly concurrency: number;
   declare readonly source: Source<A, E>;
@@ -101,13 +101,13 @@ class MapAsyncSource<A, B, E> implements Source<B, E> {
   }
 
   run(sink: Sink<B, E>, scheduler: Scheduler): Disposable {
-    const state = new MapAsyncState<A, B, E>(
+    const state = new TraverseState<A, B, E>(
       this.f,
       this.concurrency,
       sink,
       scheduler.currentTime(),
     );
-    const outerDisposable = this.source.run(new MapAsyncSink(state), scheduler);
+    const outerDisposable = this.source.run(new TraverseSink(state), scheduler);
 
     return {
       dispose() {
@@ -121,15 +121,15 @@ class MapAsyncSource<A, B, E> implements Source<B, E> {
 /**
  * Apply an async function to each event value with bounded concurrency.
  *
- * Denotation: `mapAsync(f, c, e) = [(t, await f(v)) | (t, v) ∈ e]`
+ * Denotation: `traverse(f, c, e) = [(t, await f(v)) | (t, v) ∈ e]`
  * with at most `c` pending promises at any time. When all slots are
  * occupied, incoming values are buffered until a slot frees up.
  *
  * Results are emitted as promises resolve, so output order may differ
  * from input order when concurrency > 1.
  */
-export const mapAsync = <A, B, E>(
+export const traverse = <A, B, E>(
   f: (a: A) => Promise<B>,
   concurrency: number,
   event: Event<A, E>,
-): Event<B, E> => _createEvent(new MapAsyncSource(f, concurrency, _getSource(event)));
+): Event<B, E> => _createEvent(new TraverseSource(f, concurrency, _getSource(event)));

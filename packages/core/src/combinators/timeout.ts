@@ -15,7 +15,7 @@ import type {
   Sink,
   Source,
   Time,
-} from "@pulse/types";
+} from "aeon-types";
 import { _createEvent, _getSource } from "../internal/event.js";
 
 class TimeoutError extends Error {

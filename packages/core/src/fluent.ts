@@ -7,37 +7,37 @@
  * This is a separate entry point so tree-shaking eliminates it when unused.
  */
 
-import type { Behavior, Duration, Event, Scheduler } from "@pulse/types";
+import type { Behavior, Duration, Event, Scheduler } from "aeon-types";
 import { toAsyncIterator } from "./asyncIterator.js";
 import { sample, snapshot } from "./behavior.js";
-import { count, elementAt, every } from "./combinators/aggregate.js";
+import { all, count, elementAt } from "./combinators/aggregate.js";
+import { attach } from "./combinators/attach.js";
 import { chain } from "./combinators/chain.js";
 import { combine, zip } from "./combinators/combine.js";
+import { cons } from "./combinators/cons.js";
 import { constant } from "./combinators/constant.js";
-import { defaultIfEmpty } from "./combinators/defaultIfEmpty.js";
-import { distinctUntilChanged } from "./combinators/distinctUntilChanged.js";
+import { dedupe } from "./combinators/dedupe.js";
+import { ensure } from "./combinators/ensure.js";
 import { catchError, mapError } from "./combinators/error.js";
 import { exhaustMap } from "./combinators/exhaustMap.js";
 import { filter } from "./combinators/filter.js";
-import { finalize } from "./combinators/finalize.js";
 import { first, last } from "./combinators/firstLast.js";
 import { map } from "./combinators/map.js";
-import { mapAsync } from "./combinators/mapAsync.js";
 import { merge } from "./combinators/merge.js";
-import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { mergeMap as mergeMapDirect } from "./combinators/mergeMap.js";
+import { orElse } from "./combinators/orElse.js";
 import { pairwise } from "./combinators/pairwise.js";
 import { race } from "./combinators/race.js";
 import { retry } from "./combinators/retry.js";
 import { scan } from "./combinators/scan.js";
 import { share } from "./combinators/share.js";
-import { since, skip, skipWhile, slice, take, takeWhile, until } from "./combinators/slice.js";
-import { startWith } from "./combinators/startWith.js";
+import { drop, dropWhile, since, slice, take, takeWhile, until } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
 import { bufferCount, bufferTime, debounce, delay, throttle } from "./combinators/time.js";
 import { timeout } from "./combinators/timeout.js";
-import { withLatestFrom } from "./combinators/withLatestFrom.js";
+import { traverse } from "./combinators/traverse.js";
 import { multicast } from "./multicast.js";
 
 /**
@@ -75,12 +75,12 @@ export class FluentEvent<A, E> {
     return new FluentEvent(scan(f, seed, this.event));
   }
 
-  distinctUntilChanged(eq?: (a: A, b: A) => boolean): FluentEvent<A, E> {
-    return new FluentEvent(distinctUntilChanged(this.event, eq));
+  dedupe(eq?: (a: A, b: A) => boolean): FluentEvent<A, E> {
+    return new FluentEvent(dedupe(this.event, eq));
   }
 
-  startWith(value: A): FluentEvent<A, E> {
-    return new FluentEvent(startWith(value, this.event));
+  cons(value: A): FluentEvent<A, E> {
+    return new FluentEvent(cons(value, this.event));
   }
 
   pairwise(): FluentEvent<[A, A], E> {
@@ -95,26 +95,22 @@ export class FluentEvent<A, E> {
     return new FluentEvent(last(this.event, predicate));
   }
 
-  concatMap<B>(f: (a: A) => Event<B, E>): FluentEvent<B, E> {
-    return new FluentEvent(chain(f, this.event));
-  }
-
   // --- Slicing ---
 
   take(n: number): FluentEvent<A, E> {
     return new FluentEvent(take(n, this.event));
   }
 
-  skip(n: number): FluentEvent<A, E> {
-    return new FluentEvent(skip(n, this.event));
+  drop(n: number): FluentEvent<A, E> {
+    return new FluentEvent(drop(n, this.event));
   }
 
   takeWhile(predicate: (a: A) => boolean): FluentEvent<A, E> {
     return new FluentEvent(takeWhile(predicate, this.event));
   }
 
-  skipWhile(predicate: (a: A) => boolean): FluentEvent<A, E> {
-    return new FluentEvent(skipWhile(predicate, this.event));
+  dropWhile(predicate: (a: A) => boolean): FluentEvent<A, E> {
+    return new FluentEvent(dropWhile(predicate, this.event));
   }
 
   slice(start: number, end: number): FluentEvent<A, E> {
@@ -150,11 +146,11 @@ export class FluentEvent<A, E> {
   }
 
   mergeMap<B>(f: (a: A) => Event<B, E>, concurrency: number): FluentEvent<B, E> {
-    return new FluentEvent(mergeMapConcurrently(f, concurrency, this.event));
+    return new FluentEvent(mergeMapDirect(f, concurrency, this.event));
   }
 
-  mapAsync<B>(f: (a: A) => Promise<B>, concurrency: number): FluentEvent<B, E> {
-    return new FluentEvent(mapAsync(f, concurrency, this.event));
+  traverse<B>(f: (a: A) => Promise<B>, concurrency: number): FluentEvent<B, E> {
+    return new FluentEvent(traverse(f, concurrency, this.event));
   }
 
   exhaustMap<B>(f: (a: A) => Event<B, E>): FluentEvent<B, E> {
@@ -207,28 +203,28 @@ export class FluentEvent<A, E> {
     return new FluentEvent(retry(maxRetries, this.event, delayDuration));
   }
 
-  withLatestFrom<B, C>(f: (a: A, b: B) => C, sampler: Event<B, E>): FluentEvent<C, E> {
-    return new FluentEvent(withLatestFrom(f, this.event, sampler));
+  attach<B, C>(f: (a: A, b: B) => C, sampler: Event<B, E>): FluentEvent<C, E> {
+    return new FluentEvent(attach(f, this.event, sampler));
   }
 
   timeout(duration: Duration) {
     return new FluentEvent(timeout(duration, this.event));
   }
 
-  defaultIfEmpty(value: A): FluentEvent<A, E> {
-    return new FluentEvent(defaultIfEmpty(value, this.event));
+  orElse(value: A): FluentEvent<A, E> {
+    return new FluentEvent(orElse(value, this.event));
   }
 
-  finalize(cleanup: () => void): FluentEvent<A, E> {
-    return new FluentEvent(finalize(cleanup, this.event));
+  ensure(cleanup: () => void): FluentEvent<A, E> {
+    return new FluentEvent(ensure(cleanup, this.event));
   }
 
   count(): FluentEvent<number, E> {
     return new FluentEvent(count(this.event));
   }
 
-  every(predicate: (a: A) => boolean): FluentEvent<boolean, E> {
-    return new FluentEvent(every(predicate, this.event));
+  all(predicate: (a: A) => boolean): FluentEvent<boolean, E> {
+    return new FluentEvent(all(predicate, this.event));
   }
 
   elementAt(n: number): FluentEvent<A, E> {

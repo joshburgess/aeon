@@ -1,5 +1,5 @@
-import { VirtualScheduler } from "@pulse/scheduler";
-import type { Disposable, Sink, Source, Time } from "@pulse/types";
+import { VirtualScheduler } from "aeon-scheduler";
+import type { Disposable, Sink, Source, Time } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { fromDOMEvent } from "./events.js";
 

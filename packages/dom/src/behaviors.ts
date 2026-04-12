@@ -6,9 +6,9 @@
  * they subscribe to DOM events internally.
  */
 
-import { stepper } from "@pulse/core";
-import { map } from "@pulse/core";
-import type { Behavior, Disposable, Scheduler } from "@pulse/types";
+import { stepper } from "aeon-core";
+import { map } from "aeon-core";
+import type { Behavior, Disposable, Scheduler } from "aeon-types";
 import { fromDOMEvent } from "./events.js";
 
 /** 2D point for mouse coordinates. */

@@ -1,7 +1,7 @@
-// @pulse/core — Event and Behavior implementations, combinators
+// aeon-core — Event and Behavior implementations, combinators
 
 // Re-export types
-export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "@pulse/types";
+export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "aeon-types";
 
 // Event constructors
 export { empty, never, now, at, fromArray, fromIterable, periodic, range } from "./constructors.js";
@@ -17,9 +17,9 @@ export {
   observe,
   drain,
   take,
-  skip,
+  drop,
   takeWhile,
-  skipWhile,
+  dropWhile,
   slice,
   until,
   since,
@@ -27,7 +27,7 @@ export {
   combine,
   zip,
   switchLatest,
-  mergeMapConcurrently,
+  mergeMap,
   catchError,
   mapError,
   throwError,
@@ -37,26 +37,25 @@ export {
   delay,
   bufferCount,
   bufferTime,
-  mapAsync,
+  traverse,
   fromPromise,
   retry,
   share,
-  withLatestFrom,
-  distinctUntilChanged,
-  startWith,
+  attach,
+  dedupe,
+  cons,
   first,
   last,
   pairwise,
-  concatMap,
   timeout,
   TimeoutError,
   exhaustMap,
   forkJoin,
-  defaultIfEmpty,
-  finalize,
+  orElse,
+  ensure,
   race,
   count,
-  every,
+  all,
   elementAt,
 } from "./combinators/index.js";
 

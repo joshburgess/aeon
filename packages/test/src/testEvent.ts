@@ -13,8 +13,8 @@ import type {
   Sink,
   Source,
   Time,
-} from "@pulse/types";
-import { toDuration, toTime } from "@pulse/types";
+} from "aeon-types";
+import { toDuration, toTime } from "aeon-types";
 import { type MarbleEntry, parseMarble } from "./marble.js";
 
 class MarbleSource<A, E> implements Source<A, E> {

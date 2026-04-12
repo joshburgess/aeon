@@ -1,14 +1,16 @@
 {
-  "name": "@pulse/dom",
+  "name": "aeon-dom",
   "version": "0.0.1",
-  "description": "DOM event sources and behaviors for Pulse reactive streams",
+  "description": "DOM event sources and behaviors for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/pulse",
+    "url": "https://github.com/joshburgess/aeon",
     "directory": "packages/dom"
   },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
   "keywords": ["reactive", "streams", "frp", "dom", "events", "browser"],
   "type": "module",
   "sideEffects": false,
@@ -35,8 +37,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@pulse/types": "workspace:*",
-    "@pulse/core": "workspace:*"
+    "aeon-types": "workspace:*",
+    "aeon-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

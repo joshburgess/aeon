@@ -5,7 +5,7 @@
  * Denotation: identity on the event sequence (side effects are invisible to the denotation).
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { Pipe } from "../internal/Pipe.js";
 import { _createEvent, _getSource } from "../internal/event.js";
 

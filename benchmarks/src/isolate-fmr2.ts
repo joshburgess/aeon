@@ -4,8 +4,8 @@ import type { Stream } from "@most/types";
 /**
  * Diagnostic: reversed run order + alternating to eliminate ordering bias.
  */
-import { drain, filter, fromArray, map, reduce, scan } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, filter, fromArray, map, reduce, scan } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 const N = 1_000_000;
 const arr = Array.from({ length: N }, (_, i) => i);

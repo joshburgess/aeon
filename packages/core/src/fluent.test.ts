@@ -1,5 +1,5 @@
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { constantB } from "./behavior.js";
 import { empty, fromArray, now } from "./constructors.js";
@@ -56,15 +56,15 @@ describe("fluent API", () => {
     expect(result).toBe(126); // 42 * 3
   });
 
-  it("chains skip and skipWhile", async () => {
+  it("chains drop and dropWhile", async () => {
     const scheduler = new VirtualScheduler();
     const r1 = await fluent(fromArray([1, 2, 3, 4, 5]))
-      .skip(2)
+      .drop(2)
       .reduce((acc: number, x: number) => acc + x, 0, scheduler);
     expect(r1).toBe(12); // 3+4+5
 
     const r2 = await fluent(fromArray([1, 2, 3, 4, 5]))
-      .skipWhile((x: number) => x < 3)
+      .dropWhile((x: number) => x < 3)
       .reduce((acc: number, x: number) => acc + x, 0, scheduler);
     expect(r2).toBe(12); // 3+4+5
   });
@@ -130,20 +130,20 @@ describe("fluent API", () => {
     expect(result).toBe(12);
   });
 
-  it("chains distinctUntilChanged", async () => {
+  it("chains dedupe", async () => {
     const scheduler = new VirtualScheduler();
     const values: number[] = [];
     await fluent(fromArray([1, 1, 2, 2, 3, 1]))
-      .distinctUntilChanged()
+      .dedupe()
       .observe((v: number) => values.push(v), scheduler);
     expect(values).toEqual([1, 2, 3, 1]);
   });
 
-  it("chains startWith", async () => {
+  it("chains cons", async () => {
     const scheduler = new VirtualScheduler();
     const values: number[] = [];
     await fluent(fromArray([2, 3]))
-      .startWith(1)
+      .cons(1)
       .observe((v: number) => values.push(v), scheduler);
     expect(values).toEqual([1, 2, 3]);
   });
@@ -177,11 +177,11 @@ describe("fluent API", () => {
     ]);
   });
 
-  it("chains concatMap", async () => {
+  it("chains chain", async () => {
     const scheduler = new VirtualScheduler();
     const values: number[] = [];
     await fluent(fromArray([1, 2, 3]))
-      .concatMap((x: number) => fromArray([x, x * 10]))
+      .chain((x: number) => fromArray([x, x * 10]))
       .observe((v: number) => values.push(v), scheduler);
     expect(values).toEqual([1, 10, 2, 20, 3, 30]);
   });
@@ -194,19 +194,19 @@ describe("fluent API", () => {
     expect(result).toBe(300);
   });
 
-  it("chains defaultIfEmpty on empty stream", async () => {
+  it("chains orElse on empty stream", async () => {
     const scheduler = new VirtualScheduler();
     const result = await fluent(empty<number, never>())
-      .defaultIfEmpty(42)
+      .orElse(42)
       .reduce((acc: number, x: number) => acc + x, 0, scheduler);
     expect(result).toBe(42);
   });
 
-  it("chains finalize runs cleanup", async () => {
+  it("chains ensure runs cleanup", async () => {
     const scheduler = new VirtualScheduler();
     let cleaned = false;
     await fluent(fromArray([1, 2, 3]))
-      .finalize(() => {
+      .ensure(() => {
         cleaned = true;
       })
       .drain(scheduler);
@@ -221,11 +221,11 @@ describe("fluent API", () => {
     expect(result).toBe(5);
   });
 
-  it("chains every", async () => {
+  it("chains all", async () => {
     const scheduler = new VirtualScheduler();
     const values: boolean[] = [];
     await fluent(fromArray([2, 4, 6]))
-      .every((x: number) => x % 2 === 0)
+      .all((x: number) => x % 2 === 0)
       .observe((v: boolean) => values.push(v), scheduler);
     expect(values).toEqual([true]);
   });

@@ -1,4 +1,4 @@
-import { type Event, type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { type Event, type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { reduce } from "./combinators/terminal.js";
 import { empty, fromArray, now } from "./constructors.js";
@@ -59,9 +59,9 @@ describe("pipe", () => {
     expect(result).toBe(20);
   });
 
-  it("works with skip and slice", () => {
+  it("works with drop and slice", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(fromArray([1, 2, 3, 4, 5, 6, 7, 8]), P.skip(2), P.take(3));
+    const result = pipe(fromArray([1, 2, 3, 4, 5, 6, 7, 8]), P.drop(2), P.take(3));
     expect(collectSync(result, scheduler)).toEqual([3, 4, 5]);
   });
 });
@@ -85,7 +85,7 @@ describe("pipeable operators", () => {
     expect(collectSync(result, scheduler)).toEqual(["x", "x", "x"]);
   });
 
-  it("P.takeWhile and P.skipWhile", () => {
+  it("P.takeWhile and P.dropWhile", () => {
     const scheduler = new TestScheduler();
     const tw = pipe(
       fromArray([1, 2, 3, 4, 5]),
@@ -95,7 +95,7 @@ describe("pipeable operators", () => {
 
     const sw = pipe(
       fromArray([1, 2, 3, 4, 5]),
-      P.skipWhile((x: number) => x < 3),
+      P.dropWhile((x: number) => x < 3),
     );
     expect(collectSync(sw, scheduler)).toEqual([3, 4, 5]);
   });
@@ -106,15 +106,15 @@ describe("pipeable operators", () => {
     expect(collectSync(result, scheduler)).toEqual([2, 3, 4]);
   });
 
-  it("P.distinctUntilChanged suppresses consecutive duplicates", () => {
+  it("P.dedupe suppresses consecutive duplicates", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(fromArray([1, 1, 2, 2, 3, 1]), P.distinctUntilChanged());
+    const result = pipe(fromArray([1, 1, 2, 2, 3, 1]), P.dedupe());
     expect(collectSync(result, scheduler)).toEqual([1, 2, 3, 1]);
   });
 
-  it("P.startWith prepends a value", () => {
+  it("P.cons prepends a value", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(fromArray([2, 3]), P.startWith(1));
+    const result = pipe(fromArray([2, 3]), P.cons(1));
     expect(collectSync(result, scheduler)).toEqual([1, 2, 3]);
   });
 
@@ -139,11 +139,11 @@ describe("pipeable operators", () => {
     ]);
   });
 
-  it("P.concatMap maps and flattens sequentially", () => {
+  it("P.chain maps and flattens sequentially", () => {
     const scheduler = new TestScheduler();
     const result = pipe(
       fromArray([1, 2, 3]),
-      P.concatMap((x: number) => fromArray([x, x * 10])),
+      P.chain((x: number) => fromArray([x, x * 10])),
     );
     expect(collectSync(result, scheduler)).toEqual([1, 10, 2, 20, 3, 30]);
   });
@@ -157,18 +157,18 @@ describe("pipeable operators", () => {
     expect(collectSync(result, scheduler)).toEqual([100, 200]);
   });
 
-  it("P.defaultIfEmpty emits fallback on empty", () => {
+  it("P.orElse emits fallback on empty", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(empty(), P.defaultIfEmpty(99));
+    const result = pipe(empty(), P.orElse(99));
     expect(collectSync(result, scheduler)).toEqual([99]);
   });
 
-  it("P.finalize runs cleanup on end", () => {
+  it("P.ensure runs cleanup on end", () => {
     const scheduler = new TestScheduler();
     let cleaned = false;
     const result = pipe(
       fromArray([1, 2]),
-      P.finalize(() => {
+      P.ensure(() => {
         cleaned = true;
       }),
     );
@@ -182,11 +182,11 @@ describe("pipeable operators", () => {
     expect(collectSync(result, scheduler)).toEqual([5]);
   });
 
-  it("P.every emits true when all match", () => {
+  it("P.all emits true when all match", () => {
     const scheduler = new TestScheduler();
     const result = pipe(
       fromArray([2, 4, 6]),
-      P.every((x: number) => x % 2 === 0),
+      P.all((x: number) => x % 2 === 0),
     );
     expect(collectSync(result, scheduler)).toEqual([true]);
   });

@@ -1,13 +1,13 @@
 /**
- * Slicing combinators: take, skip, takeWhile, skipWhile, slice.
+ * Slicing combinators: take, drop, takeWhile, dropWhile, slice.
  *
  * Includes algebraic simplifications:
  * - take(n, take(m, s)) → take(min(n, m), s)
- * - skip(n, skip(m, s)) → skip(n + m, s)
- * - take/skip on empty → empty
+ * - drop(n, drop(m, s)) → drop(n + m, s)
+ * - take/drop on empty → empty
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "@pulse/types";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
 import { _EMPTY_SOURCE, _EmptySource } from "../constructors.js";
 import { Pipe } from "../internal/Pipe.js";
 import { SettableDisposable, disposeAll, disposeNone } from "../internal/dispose.js";
@@ -100,9 +100,9 @@ export const take = <A, E>(n: number, event: Event<A, E>): Event<A, E> => {
   return _createEvent(new TakeSource(n, source));
 };
 
-// --- skip ---
+// --- drop ---
 
-class SkipSink<A, E> extends Pipe<A, E> {
+class DropSink<A, E> extends Pipe<A, E> {
   declare remaining: number;
 
   constructor(n: number, sink: Sink<A, E>) {
@@ -119,7 +119,7 @@ class SkipSink<A, E> extends Pipe<A, E> {
   }
 }
 
-class SkipSource<A, E> implements Source<A, E> {
+class DropSource<A, E> implements Source<A, E> {
   declare readonly n: number;
   declare readonly source: Source<A, E>;
   declare readonly _sync: boolean;
@@ -131,7 +131,7 @@ class SkipSource<A, E> implements Source<A, E> {
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    return this.source.run(new SkipSink(this.n, sink), scheduler);
+    return this.source.run(new DropSink(this.n, sink), scheduler);
   }
 
   syncIterate(emit: (value: A) => boolean): void {
@@ -146,22 +146,22 @@ class SkipSource<A, E> implements Source<A, E> {
   }
 }
 
-/** Skip the first n values, then pass through the rest. */
-export const skip = <A, E>(n: number, event: Event<A, E>): Event<A, E> => {
+/** Drop the first n values, then pass through the rest. */
+export const drop = <A, E>(n: number, event: Event<A, E>): Event<A, E> => {
   if (n <= 0) return event;
   const source = _getSource(event);
 
-  // skip(n, empty()) → empty()
+  // drop(n, empty()) → empty()
   if (source instanceof _EmptySource) {
     return _createEvent(_EMPTY_SOURCE as unknown as Source<A, E>);
   }
 
-  // skip(n, skip(m, s)) → skip(n + m, s)
-  if (source instanceof SkipSource) {
-    return _createEvent(new SkipSource(n + source.n, source.source));
+  // drop(n, drop(m, s)) → drop(n + m, s)
+  if (source instanceof DropSource) {
+    return _createEvent(new DropSource(n + source.n, source.source));
   }
 
-  return _createEvent(new SkipSource(n, source));
+  return _createEvent(new DropSource(n, source));
 };
 
 // --- takeWhile ---
@@ -211,9 +211,9 @@ class TakeWhileSource<A, E> implements Source<A, E> {
 export const takeWhile = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>): Event<A, E> =>
   _createEvent(new TakeWhileSource(predicate, _getSource(event)));
 
-// --- skipWhile ---
+// --- dropWhile ---
 
-class SkipWhileSink<A, E> extends Pipe<A, E> {
+class DropWhileSink<A, E> extends Pipe<A, E> {
   declare readonly predicate: (a: A) => boolean;
   declare skipping: boolean;
 
@@ -233,7 +233,7 @@ class SkipWhileSink<A, E> extends Pipe<A, E> {
   }
 }
 
-class SkipWhileSource<A, E> implements Source<A, E> {
+class DropWhileSource<A, E> implements Source<A, E> {
   declare readonly predicate: (a: A) => boolean;
   declare readonly source: Source<A, E>;
 
@@ -243,23 +243,23 @@ class SkipWhileSource<A, E> implements Source<A, E> {
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    return this.source.run(new SkipWhileSink(this.predicate, sink), scheduler);
+    return this.source.run(new DropWhileSink(this.predicate, sink), scheduler);
   }
 }
 
-/** Skip values while the predicate holds, then pass through the rest. */
-export const skipWhile = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>): Event<A, E> =>
-  _createEvent(new SkipWhileSource(predicate, _getSource(event)));
+/** Drop values while the predicate holds, then pass through the rest. */
+export const dropWhile = <A, E>(predicate: (a: A) => boolean, event: Event<A, E>): Event<A, E> =>
+  _createEvent(new DropWhileSource(predicate, _getSource(event)));
 
 // --- slice ---
 
 /**
- * Take a contiguous slice: skip `start` values, then take `end - start`.
+ * Take a contiguous slice: drop `start` values, then take `end - start`.
  *
- * Denotation: `slice(s, e, stream) = take(e - s, skip(s, stream))`
+ * Denotation: `slice(s, e, stream) = take(e - s, drop(s, stream))`
  */
 export const slice = <A, E>(start: number, end: number, event: Event<A, E>): Event<A, E> =>
-  take(end - start, skip(start, event));
+  take(end - start, drop(start, event));
 
 // --- until ---
 
@@ -395,7 +395,7 @@ class SinceSource<A, E> implements Source<A, E> {
 }
 
 /**
- * Skip values from the event until the signal fires, then pass through the rest.
+ * Drop values from the event until the signal fires, then pass through the rest.
  *
  * Denotation: `since(signal, e) = [(t, v) | (t, v) ∈ e, t >= t_signal]`
  * where `t_signal` is the time of the first occurrence in `signal`.

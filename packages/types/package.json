@@ -1,14 +1,16 @@
 {
-  "name": "@pulse/types",
+  "name": "aeon-types",
   "version": "0.0.1",
-  "description": "Core type definitions for Pulse reactive streams",
+  "description": "Core type definitions for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/pulse",
+    "url": "https://github.com/joshburgess/aeon",
     "directory": "packages/types"
   },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
   "keywords": ["reactive", "streams", "frp", "types", "typescript"],
   "type": "module",
   "sideEffects": false,

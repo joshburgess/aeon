@@ -3,10 +3,10 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@pulse/types": ["./packages/types/src/index.ts"],
-      "@pulse/core": ["./packages/core/src/index.ts"],
-      "@pulse/scheduler": ["./packages/scheduler/src/index.ts"],
-      "@pulse/test": ["./packages/test/src/index.ts"]
+      "aeon-types": ["./packages/types/src/index.ts"],
+      "aeon-core": ["./packages/core/src/index.ts"],
+      "aeon-scheduler": ["./packages/scheduler/src/index.ts"],
+      "aeon-test": ["./packages/test/src/index.ts"]
     }
   },
   "include": ["packages/*/src/**/*.ts"]

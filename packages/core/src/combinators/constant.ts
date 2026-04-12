@@ -4,7 +4,7 @@
  * Denotation: `constant(b, e) = [(t, b) | (t, _) ∈ e]`
  */
 
-import type { Event } from "@pulse/types";
+import type { Event } from "aeon-types";
 import { map } from "./map.js";
 
 /**

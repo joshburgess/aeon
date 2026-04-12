@@ -1,6 +1,6 @@
 /**
- * Benchmarks for new Event operators: distinctUntilChanged, exhaustMap,
- * race, forkJoin, pairwise, first, last, startWith, elementAt.
+ * Benchmarks for new Event operators: dedupe, exhaustMap,
+ * race, forkJoin, pairwise, first, last, cons, elementAt.
  *
  * 3-way comparison: Pulse vs @most/core (where equivalent exists) vs RxJS.
  */
@@ -9,7 +9,8 @@ import { bench, describe } from "vitest";
 
 // --- Pulse ---
 import {
-  distinctUntilChanged,
+  cons,
+  dedupe,
   drain,
   elementAt,
   exhaustMap,
@@ -19,9 +20,8 @@ import {
   last,
   pairwise,
   race,
-  startWith,
-} from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+} from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 // --- @most/core ---
 import {
@@ -56,7 +56,7 @@ import { range } from "./helpers.js";
 
 const N = 100_000;
 const arr = range(N);
-// Array with many consecutive duplicates for distinctUntilChanged
+// Array with many consecutive duplicates for dedupe
 const dupsArr = arr.map((x) => Math.floor(x / 10));
 
 const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
@@ -69,16 +69,16 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
     return { dispose() {} };
   });
 
-// --- distinctUntilChanged (100k, ~10k unique) ---
+// --- dedupe (100k, ~10k unique) ---
 
-describe("distinctUntilChanged (100k, ~10k unique)", () => {
+describe("dedupe (100k, ~10k unique)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
-    await drain(distinctUntilChanged(fromArray(dupsArr)), scheduler);
+    await drain(dedupe(fromArray(dupsArr)), scheduler);
   });
 
   bench("@most/core (skipRepeats)", async () => {
-    // @most/core has skipRepeats which is distinctUntilChanged
+    // @most/core has skipRepeats which is dedupe
     const { skipRepeats } = await import("@most/core");
     const scheduler = newDefaultScheduler();
     await runEffects(skipRepeats(mostFromArray(dupsArr)), scheduler);
@@ -137,12 +137,12 @@ describe("last (100k)", () => {
   });
 });
 
-// --- startWith (100k) ---
+// --- cons (100k) ---
 
-describe("startWith (100k)", () => {
+describe("cons (100k)", () => {
   bench("pulse", async () => {
     const scheduler = new VirtualScheduler();
-    await drain(startWith(-1, fromArray(arr)), scheduler);
+    await drain(cons(-1, fromArray(arr)), scheduler);
   });
 
   bench("@most/core (startWith)", async () => {

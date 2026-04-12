@@ -1,4 +1,4 @@
-// @pulse/dom — DOM event sources and browser behaviors
+// aeon-dom — DOM event sources and browser behaviors
 
 export { fromDOMEvent } from "./events.js";
 export { animationFrames } from "./animationFrames.js";

@@ -1,5 +1,5 @@
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Event, type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Event, type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { createAdapter } from "./adapter.js";
 import { toAsyncIterator } from "./asyncIterator.js";

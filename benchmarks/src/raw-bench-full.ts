@@ -3,8 +3,8 @@
  * warmup and isolation to avoid vitest JIT pollution.
  */
 
-import { drain, filter, fromArray, map, merge, reduce, scan, skip, take } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
+import { drain, drop, filter, fromArray, map, merge, reduce, scan, take } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
 
 import {
   filter as mostFilter,
@@ -192,11 +192,11 @@ async function main() {
     },
   );
 
-  // 7. skip(999_900) from 1M
+  // 7. drop(999_900) from 1M
   await runBench(
-    "skip(999900)",
+    "drop(999900)",
     async () => {
-      await drain(skip(999_900, fromArray(arr)), new VirtualScheduler());
+      await drain(drop(999_900, fromArray(arr)), new VirtualScheduler());
     },
     async () => {
       await runEffects(mostSkip(999_900, mostFromArray(arr)), newDefaultScheduler());

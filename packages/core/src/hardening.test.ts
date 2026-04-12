@@ -3,8 +3,8 @@
  * memory-leak prevention, and combinator composition stress tests.
  */
 
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Behavior, type Event, type Sink, type Time, toDuration, toTime } from "@pulse/types";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Behavior, type Event, type Sink, type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { createAdapter } from "./adapter.js";
 import { toAsyncIterator } from "./asyncIterator.js";
@@ -15,9 +15,9 @@ import { catchError, mapError, throwError } from "./combinators/error.js";
 import { filter } from "./combinators/filter.js";
 import { map } from "./combinators/map.js";
 import { merge } from "./combinators/merge.js";
-import { mergeMapConcurrently } from "./combinators/mergeMap.js";
+import { mergeMap } from "./combinators/mergeMap.js";
 import { scan } from "./combinators/scan.js";
-import { skip, take, takeWhile } from "./combinators/slice.js";
+import { drop, take, takeWhile } from "./combinators/slice.js";
 import { switchLatest } from "./combinators/switch.js";
 import { tap } from "./combinators/tap.js";
 import { drain, observe, reduce } from "./combinators/terminal.js";
@@ -258,11 +258,11 @@ describe("disposal safety", () => {
     expect(innerDisposed).toBe(true);
   });
 
-  it("mergeMapConcurrently disposes all inner streams on dispose", () => {
+  it("mergeMap disposes all inner streams on dispose", () => {
     const scheduler = new TestScheduler();
     const disposed: number[] = [];
 
-    const result = mergeMapConcurrently(
+    const result = mergeMap(
       (x: number) =>
         _createEvent<number, never>({
           run(sink, sched) {
@@ -556,9 +556,9 @@ describe("edge cases", () => {
     expect(result).toEqual([42]);
   });
 
-  it("skip on empty produces empty", () => {
+  it("drop on empty produces empty", () => {
     const scheduler = new TestScheduler();
-    const { values, ended } = collectWithEnd<number>(skip(5, empty()), scheduler);
+    const { values, ended } = collectWithEnd<number>(drop(5, empty()), scheduler);
     expect(values).toEqual([]);
     expect(ended).toBe(true);
   });
@@ -1083,14 +1083,14 @@ describe("deep pipeline composition", () => {
 });
 
 // ====================================================================
-// mergeMapConcurrently edge cases
+// mergeMap edge cases
 // ====================================================================
 
-describe("mergeMapConcurrently edge cases", () => {
-  it("concurrency=1 behaves like concatMap", () => {
+describe("mergeMap edge cases", () => {
+  it("concurrency=1 behaves like chain", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(
-      mergeMapConcurrently((x: number) => fromArray([x * 10, x * 10 + 1]), 1, fromArray([1, 2, 3])),
+      mergeMap((x: number) => fromArray([x * 10, x * 10 + 1]), 1, fromArray([1, 2, 3])),
       scheduler,
     );
     expect(result).toEqual([10, 11, 20, 21, 30, 31]);
@@ -1099,11 +1099,7 @@ describe("mergeMapConcurrently edge cases", () => {
   it("concurrency=Infinity runs all at once", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(
-      mergeMapConcurrently(
-        (x: number) => fromArray([x * 10]),
-        Number.POSITIVE_INFINITY,
-        fromArray([1, 2, 3]),
-      ),
+      mergeMap((x: number) => fromArray([x * 10]), Number.POSITIVE_INFINITY, fromArray([1, 2, 3])),
       scheduler,
     );
     expect(result).toEqual([10, 20, 30]);
@@ -1112,7 +1108,7 @@ describe("mergeMapConcurrently edge cases", () => {
   it("empty outer ends immediately", () => {
     const scheduler = new TestScheduler();
     const { values, ended } = collectWithEnd<number>(
-      mergeMapConcurrently((x: number) => fromArray([x]), 2, empty()),
+      mergeMap((x: number) => fromArray([x]), 2, empty()),
       scheduler,
     );
     expect(values).toEqual([]);
@@ -1122,7 +1118,7 @@ describe("mergeMapConcurrently edge cases", () => {
   it("inner streams that are empty complete correctly", () => {
     const scheduler = new TestScheduler();
     const result = collectSync<number>(
-      mergeMapConcurrently(() => empty<number>(), 2, fromArray([1, 2, 3])),
+      mergeMap(() => empty<number>(), 2, fromArray([1, 2, 3])),
       scheduler,
     );
     expect(result).toEqual([]);

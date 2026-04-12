@@ -6,7 +6,7 @@
  * methods across all sink subtypes.
  */
 
-import type { Sink, Time } from "@pulse/types";
+import type { Sink, Time } from "aeon-types";
 
 export class Pipe<A, E> {
   declare readonly sink: Sink<A, E>;

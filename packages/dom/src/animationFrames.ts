@@ -4,7 +4,7 @@
  * Emits a DOMHighResTimeStamp on each requestAnimationFrame callback.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source } from "@pulse/types";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source } from "aeon-types";
 import { createEvent } from "./internal.js";
 
 class AnimationFrameSource implements Source<DOMHighResTimeStamp, never> {

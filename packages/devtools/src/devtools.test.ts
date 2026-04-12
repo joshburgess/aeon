@@ -1,6 +1,6 @@
-import { filter, fromArray, map, merge, scan, take } from "@pulse/core";
-import { VirtualScheduler } from "@pulse/scheduler";
-import { type Source, type Time, toTime } from "@pulse/types";
+import { filter, fromArray, map, merge, scan, take } from "aeon-core";
+import { VirtualScheduler } from "aeon-scheduler";
+import { type Source, type Time, toTime } from "aeon-types";
 import { describe, expect, it, vi } from "vitest";
 import { inspect } from "./inspect.js";
 import { getLabel, label } from "./label.js";

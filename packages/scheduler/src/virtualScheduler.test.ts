@@ -1,4 +1,4 @@
-import { type Time, toDuration, toTime } from "@pulse/types";
+import { type Time, toDuration, toTime } from "aeon-types";
 import { describe, expect, it } from "vitest";
 import { VirtualScheduler } from "./virtualScheduler.js";
 

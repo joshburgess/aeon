@@ -8,7 +8,7 @@
  * Hot paths use local variable hoisting for function properties.
  */
 
-import { DURATION_ZERO, type Event, type Scheduler, type Sink, type Time } from "@pulse/types";
+import { DURATION_ZERO, type Event, type Scheduler, type Sink, type Time } from "aeon-types";
 import { _getSource, isSyncSource } from "../internal/event.js";
 
 // --- Sink classes for V8 monomorphism ---
