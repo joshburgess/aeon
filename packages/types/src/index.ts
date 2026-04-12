@@ -16,8 +16,7 @@ export {
 } from "./branded.js";
 
 export {
-  type URItoKind,
-  type URIS,
+  type TypeLambda,
   type Kind,
   type Functor,
   type Applicative,
@@ -36,8 +35,6 @@ export {
   type Scheduler,
   type Event,
   type Behavior,
-  EventURI,
-  type EventURI as EventURIType,
-  BehaviorURI,
-  type BehaviorURI as BehaviorURIType,
+  type EventTypeLambda,
+  type BehaviorTypeLambda,
 } from "./interfaces.js";

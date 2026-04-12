@@ -5,6 +5,7 @@
  * Denotational meanings are stated in JSDoc.
  */
 
+import type { TypeLambda } from "./hkt.js";
 import type { Duration, Offset, Time } from "./branded.js";
 
 // --- Disposable ---
@@ -106,19 +107,24 @@ export type Behavior<A, E = never> = {
   readonly [BehaviorBrand]: [A, E];
 };
 
-// --- URI constants for HKT registration ---
+// --- Type Lambdas for HKT encoding ---
 
-export const EventURI = "Event" as const;
-export type EventURI = typeof EventURI;
+/**
+ * Type lambda for `Event<A, E>`.
+ *
+ * Use with `Kind<EventTypeLambda, A, E>` to refer to `Event<A, E>` in
+ * typeclass-generic code.
+ */
+export interface EventTypeLambda extends TypeLambda {
+  readonly type: Event<this["A"], this["E"]>;
+}
 
-export const BehaviorURI = "Behavior" as const;
-export type BehaviorURI = typeof BehaviorURI;
-
-// --- Module augmentation: register Event and Behavior in the HKT map ---
-
-declare module "./hkt.js" {
-  interface URItoKind<A, E> {
-    readonly [EventURI]: Event<A, E>;
-    readonly [BehaviorURI]: Behavior<A, E>;
-  }
+/**
+ * Type lambda for `Behavior<A, E>`.
+ *
+ * Use with `Kind<BehaviorTypeLambda, A, E>` to refer to `Behavior<A, E>`
+ * in typeclass-generic code.
+ */
+export interface BehaviorTypeLambda extends TypeLambda {
+  readonly type: Behavior<this["A"], this["E"]>;
 }
