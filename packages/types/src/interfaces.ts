@@ -105,20 +105,3 @@ declare const BehaviorBrand: unique symbol;
 export type Behavior<A, E = never> = {
   readonly [BehaviorBrand]: [A, E];
 };
-
-// --- URI constants for HKT registration ---
-
-export const EventURI = "Event" as const;
-export type EventURI = typeof EventURI;
-
-export const BehaviorURI = "Behavior" as const;
-export type BehaviorURI = typeof BehaviorURI;
-
-// --- Module augmentation: register Event and Behavior in the HKT map ---
-
-declare module "./hkt.js" {
-  interface URItoKind<A, E> {
-    readonly [EventURI]: Event<A, E>;
-    readonly [BehaviorURI]: Behavior<A, E>;
-  }
-}

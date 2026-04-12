@@ -1,6 +1,6 @@
 {
   "name": "aeon-devtools",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Debug instrumentation for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
