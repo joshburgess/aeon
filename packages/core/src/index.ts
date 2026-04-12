@@ -1,7 +1,16 @@
 // aeon-core — Event and Behavior implementations, combinators
 
 // Re-export types
-export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "aeon-types";
+export type {
+  Event,
+  Behavior,
+  Sink,
+  Source,
+  Scheduler,
+  Disposable,
+  EventTypeLambda,
+  BehaviorTypeLambda,
+} from "aeon-types";
 
 // Event constructors
 export { empty, never, now, at, fromArray, fromIterable, periodic, range } from "./constructors.js";
@@ -98,3 +107,14 @@ export { multicast } from "./multicast.js";
 
 // AsyncIterator integration
 export { toAsyncIterator, fromAsyncIterable } from "./asyncIterator.js";
+
+// Typeclass instances for Event and Behavior
+export {
+  EventFunctor,
+  EventApplicative,
+  EventMonad,
+  EventFilterable,
+  BehaviorFunctor,
+  BehaviorApplicative,
+  BehaviorMonad,
+} from "./instances.js";
