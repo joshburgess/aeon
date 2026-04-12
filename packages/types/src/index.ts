@@ -15,13 +15,13 @@ export {
   OFFSET_ZERO,
 } from "./branded.js";
 
-export {
-  type Disposable,
-  type Sink,
-  type Source,
-  type Task,
-  type ScheduledTask,
-  type Scheduler,
-  type Event,
-  type Behavior,
+export type {
+  Disposable,
+  Sink,
+  Source,
+  Task,
+  ScheduledTask,
+  Scheduler,
+  Event,
+  Behavior,
 } from "./interfaces.js";

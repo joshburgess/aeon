@@ -105,4 +105,3 @@ declare const BehaviorBrand: unique symbol;
 export type Behavior<A, E = never> = {
   readonly [BehaviorBrand]: [A, E];
 };
-
