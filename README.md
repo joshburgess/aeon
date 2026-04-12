@@ -15,7 +15,7 @@ Aeon provides two core abstractions with precise mathematical semantics:
 - **Three API styles** — data-first composition, `pipe()` with data-last curried operators, fluent chainable methods
 - **Behaviors** — continuous-time values with generation-based dirty-flag caching, numerical integration and differentiation
 - **Comprehensive** — 50+ operators covering transforms, slicing, combining, higher-order, error handling, time, and aggregation
-- **Small** — 2.8 KB gzipped minimal import, 8.3 KB typical app, 14 KB full library
+- **Small** — 1.5 KB gzipped minimal import, 8.3 KB full `aeon-core` (all combinators)
 
 ## Installation
 
@@ -137,24 +137,31 @@ Synchronous sources bypass the Sink protocol entirely via `syncIterate`, enablin
 
 ## Bundle Size
 
-| Import | Raw | Gzipped |
-|---|---:|---:|
-| Minimal (`fromArray`, `map`, `filter`, `reduce`) | 12.3 KB | **2.8 KB** |
-| Typical app (30+ operators + scheduler) | 50.4 KB | **8.3 KB** |
-| Full library (core + scheduler) | 88.1 KB | **14.0 KB** |
+Tree-shaken bundles produced with esbuild (`pnpm bundle-size`):
 
-All packages declare `sideEffects: false` for proper tree-shaking.
+| Import | min+gzip | min+brotli |
+|---|---:|---:|
+| Minimal — `now`, `map`, `observe` + `DefaultScheduler` | **1.5 KB** | 1.3 KB |
+| Typical (data-first) — 6 operators + scheduler | **1.9 KB** | 1.8 KB |
+| `aeon-core` — every combinator, full re-export | **8.3 KB** | 7.5 KB |
+| `aeon-core` + `aeon-scheduler` — full re-export | **9.4 KB** | 8.4 KB |
+
+All packages declare `sideEffects: false`. For best tree-shaking, prefer
+direct imports (`import { map, filter } from "aeon-core"`) over the
+`P.*` namespace, which bundlers cannot reliably split.
 
 ## Packages
 
-| Package | Description | Gzipped |
+Per-package dist size (minified, no cross-package inlining):
+
+| Package | Description | min+gzip |
 |---|---|---:|
-| `aeon-core` | Event and Behavior implementations, all combinators | 20.2 KB |
-| `aeon-scheduler` | Default and virtual time schedulers | 2.1 KB |
-| `aeon-types` | Branded types, HKT encoding, interfaces | 0.9 KB |
-| `aeon-dom` | DOM event sources, animation frame behaviors | 1.1 KB |
-| `aeon-devtools` | Stream labeling, tracing, graph inspection | 2.2 KB |
-| `aeon-test` | Marble testing DSL, virtual scheduler helpers | 2.3 KB |
+| `aeon-core` | Event and Behavior implementations, all combinators | 8.3 KB |
+| `aeon-test` | Marble testing DSL, virtual scheduler helpers | 1.8 KB |
+| `aeon-scheduler` | Default and virtual time schedulers | 1.2 KB |
+| `aeon-devtools` | Stream labeling, tracing, graph inspection | 1.1 KB |
+| `aeon-dom` | DOM event sources, animation frame behaviors | 1.0 KB |
+| `aeon-types` | Branded types, HKT encoding, interfaces | 0.3 KB |
 
 ## Documentation
 

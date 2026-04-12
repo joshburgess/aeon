@@ -12,7 +12,8 @@
     "format": "biome format --write .",
     "clean": "pnpm -r run clean",
     "bench": "vitest bench --run",
-    "bench:watch": "vitest bench"
+    "bench:watch": "vitest bench",
+    "bundle-size": "node benchmarks/src/bundle-size.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
