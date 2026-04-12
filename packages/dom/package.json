@@ -1,6 +1,6 @@
 {
   "name": "aeon-dom",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DOM event sources and behaviors for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",

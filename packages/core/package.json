@@ -1,6 +1,6 @@
 {
   "name": "aeon-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Denotationally-designed reactive streams for TypeScript",
   "license": "MIT",
   "author": "Josh Burgess",

@@ -12,11 +12,11 @@
  * Requires that all packages have been built first (`pnpm -r build`).
  */
 
-import { build } from "esbuild";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brotliCompressSync, gzipSync } from "node:zlib";
+import { build } from "esbuild";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../..");
@@ -73,7 +73,7 @@ const FIXTURES = [
 ];
 
 function fmt(bytes) {
-  return (bytes / 1024).toFixed(1) + " KB";
+  return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
 function pad(s, n) {
@@ -86,7 +86,7 @@ function padRight(s, n) {
 
 async function measureFixture(name, code) {
   if (!existsSync(fixtureDir)) mkdirSync(fixtureDir, { recursive: true });
-  const file = join(fixtureDir, name.replace(/[^a-z0-9]+/gi, "-") + ".mjs");
+  const file = join(fixtureDir, `${name.replace(/[^a-z0-9]+/gi, "-")}.mjs`);
   writeFileSync(file, code);
 
   const result = await build({
@@ -142,7 +142,7 @@ async function main() {
     const r = await measurePackage(pkg);
     if (!r) continue;
     console.log(
-      pad("aeon-" + pkg, 18),
+      pad(`aeon-${pkg}`, 18),
       padRight(fmt(r.raw), 10),
       padRight(fmt(r.min), 10),
       padRight(fmt(r.gzip), 12),
