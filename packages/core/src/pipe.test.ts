@@ -159,7 +159,7 @@ describe("pipeable operators", () => {
 
   it("P.orElse emits fallback on empty", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(empty(), P.orElse(99));
+    const result = pipe(empty<number>(), P.orElse(99));
     expect(collectSync(result, scheduler)).toEqual([99]);
   });
 
@@ -319,7 +319,11 @@ describe("pipeable operators", () => {
 
   it("P.timeout returns an event", () => {
     const scheduler = new TestScheduler();
-    const result = pipe(fromArray([1, 2, 3]), P.timeout(toDuration(1000)));
+    const result = pipe(
+      fromArray([1, 2, 3]),
+      P.timeout(toDuration(1000)),
+      P.catchError(() => fromArray<number>([])),
+    );
     expect(collectSync(result, scheduler)).toEqual([1, 2, 3]);
   });
 

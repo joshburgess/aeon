@@ -40,6 +40,7 @@
     "aeon-types": "workspace:*"
   },
   "devDependencies": {
+    "aeon-scheduler": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

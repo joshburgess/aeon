@@ -196,7 +196,7 @@ describe("fluent API", () => {
 
   it("chains orElse on empty stream", async () => {
     const scheduler = new VirtualScheduler();
-    const result = await fluent(empty<number, never>())
+    const result = await fluent(empty<number>())
       .orElse(42)
       .reduce((acc: number, x: number) => acc + x, 0, scheduler);
     expect(result).toBe(42);

@@ -22,10 +22,15 @@ import { multicast } from "./multicast.js";
 
 const ITERATIONS = 10_000;
 
+type GlobalWithGC = { gc?: () => void };
+type ProcessLike = { memoryUsage(): { heapUsed: number } };
+declare const process: ProcessLike;
+
 /** Force a GC if available (run node with --expose-gc). */
 function tryGC() {
-  if (typeof globalThis.gc === "function") {
-    globalThis.gc();
+  const g = globalThis as GlobalWithGC;
+  if (typeof g.gc === "function") {
+    g.gc();
   }
 }
 
