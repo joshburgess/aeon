@@ -1,6 +1,6 @@
 {
   "name": "aeon-devtools",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Debug instrumentation for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
@@ -36,12 +36,14 @@
     "test": "vitest run",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "aeon-types": "workspace:*",
-    "aeon-core": "workspace:*"
+  "peerDependencies": {
+    "aeon-types": "workspace:^",
+    "aeon-core": "workspace:^"
   },
   "devDependencies": {
+    "aeon-core": "workspace:*",
     "aeon-scheduler": "workspace:*",
+    "aeon-types": "workspace:*",
     "typescript": "^5.7.2"
   }
 }

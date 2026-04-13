@@ -1,7 +1,7 @@
 {
   "name": "aeon-effect",
-  "version": "0.1.0",
-  "description": "Effect ecosystem integration for Aeon reactive streams — typeclass instances and Stream bridge",
+  "version": "0.2.0",
+  "description": "Effect ecosystem integration for Aeon reactive streams, typeclass instances and Stream bridge",
   "license": "MIT",
   "author": "Josh Burgess",
   "repository": {
