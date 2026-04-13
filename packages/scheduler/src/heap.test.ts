@@ -36,14 +36,41 @@ describe("BinaryHeap", () => {
     expect(heap.extractMin()?.value).toBe("c");
   });
 
-  it("handles duplicate priorities", () => {
+  it("breaks ties on duplicate priorities in FIFO insertion order", () => {
     const heap = new BinaryHeap<string>();
     heap.insert("a", 10);
     heap.insert("b", 10);
     heap.insert("c", 10);
 
-    const results = [heap.extractMin()?.value, heap.extractMin()?.value, heap.extractMin()?.value];
-    expect(results.sort()).toEqual(["a", "b", "c"]);
+    expect(heap.extractMin()?.value).toBe("a");
+    expect(heap.extractMin()?.value).toBe("b");
+    expect(heap.extractMin()?.value).toBe("c");
+  });
+
+  it("preserves FIFO order across interleaved same-priority inserts", () => {
+    const heap = new BinaryHeap<string>();
+    heap.insert("a1", 10);
+    heap.insert("b1", 20);
+    heap.insert("a2", 10);
+    heap.insert("b2", 20);
+    heap.insert("a3", 10);
+
+    const order: string[] = [];
+    while (heap.size > 0) order.push(heap.extractMin()!.value);
+    expect(order).toEqual(["a1", "a2", "a3", "b1", "b2"]);
+  });
+
+  it("preserves FIFO order after remove of a middle same-priority entry", () => {
+    const heap = new BinaryHeap<string>();
+    heap.insert("a", 10);
+    const b = heap.insert("b", 10);
+    heap.insert("c", 10);
+    heap.insert("d", 10);
+
+    expect(heap.remove(b)).toBe(true);
+    const order: string[] = [];
+    while (heap.size > 0) order.push(heap.extractMin()!.value);
+    expect(order).toEqual(["a", "c", "d"]);
   });
 
   it("maintains heap property after many operations", () => {

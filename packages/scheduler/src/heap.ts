@@ -1,19 +1,28 @@
 /**
  * Binary min-heap for the scheduler's timer queue.
  *
- * Keyed on a numeric priority (scheduled time). Uses a pre-allocated
- * backing array to minimize per-node allocation.
+ * Keyed on a numeric priority (scheduled time). Ties on priority are broken
+ * by insertion order via a monotonic `seq` counter, so same-time tasks run
+ * FIFO — deterministic and stable across equivalent schedules.
+ *
+ * Uses a pre-allocated backing array to minimize per-node allocation.
  */
 
 export interface HeapEntry<T> {
   readonly value: T;
   readonly priority: number;
+  /** Monotonic insertion counter, used as a secondary FIFO tiebreaker. */
+  readonly seq: number;
   /** Internal index for O(log n) removal. Mutated by the heap. */
   index: number;
 }
 
+const isLess = <T>(a: HeapEntry<T>, b: HeapEntry<T>): boolean =>
+  a.priority < b.priority || (a.priority === b.priority && a.seq < b.seq);
+
 export class BinaryHeap<T> {
   private declare items: HeapEntry<T>[];
+  private seqCounter = 0;
 
   constructor(initialCapacity = 64) {
     this.items = [];
@@ -32,7 +41,12 @@ export class BinaryHeap<T> {
   }
 
   insert(value: T, priority: number): HeapEntry<T> {
-    const entry: HeapEntry<T> = { value, priority, index: this.items.length };
+    const entry: HeapEntry<T> = {
+      value,
+      priority,
+      seq: this.seqCounter++,
+      index: this.items.length,
+    };
     this.items.push(entry);
     this.siftUp(entry.index);
     return entry;
@@ -65,8 +79,8 @@ export class BinaryHeap<T> {
     this.items.pop();
 
     // Restore heap property
-    const parent = (index - 1) >>> 1;
-    if (index > 0 && moved.priority < this.items[parent]!.priority) {
+    const parentIndex = (index - 1) >>> 1;
+    if (index > 0 && isLess(moved, this.items[parentIndex]!)) {
       this.siftUp(index);
     } else {
       this.siftDown(index);
@@ -78,7 +92,7 @@ export class BinaryHeap<T> {
     while (index > 0) {
       const parentIndex = (index - 1) >>> 1;
       const parent = this.items[parentIndex]!;
-      if (item.priority >= parent.priority) break;
+      if (!isLess(item, parent)) break;
       this.items[index] = parent;
       parent.index = index;
       index = parentIndex;
@@ -96,12 +110,12 @@ export class BinaryHeap<T> {
       let child = this.items[childIndex]!;
       const rightIndex = childIndex + 1;
 
-      if (rightIndex < this.items.length && this.items[rightIndex]!.priority < child.priority) {
+      if (rightIndex < this.items.length && isLess(this.items[rightIndex]!, child)) {
         childIndex = rightIndex;
         child = this.items[rightIndex]!;
       }
 
-      if (item.priority <= child.priority) break;
+      if (isLess(item, child)) break;
 
       this.items[index] = child;
       child.index = index;
