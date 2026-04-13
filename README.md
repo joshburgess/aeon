@@ -12,7 +12,7 @@ Aeon provides two core abstractions with precise mathematical semantics:
 - **Denotational semantics**: every combinator has a formal mathematical meaning
 - **Typed error channel**: `E = never` means a stream provably cannot fail
 - **V8-optimized**: monomorphic sink classes, hidden class discipline, construction-time pipeline fusion
-- **Three API styles**: data-first composition, `pipe()` with data-last curried operators, fluent chainable methods
+- **Three API styles**: data-last uncurried, `pipe()` with data-last curried operators, fluent chainable methods
 - **Behaviors**: continuous-time values with generation-based dirty-flag caching, numerical integration and differentiation
 - **Comprehensive**: 50+ operators covering transforms, slicing, combining, higher-order, error handling, time, and aggregation
 - **Small**: 1.5 KB gzipped minimal import, 8.3 KB full `aeon-core` (all combinators)
@@ -34,11 +34,21 @@ pnpm add aeon-devtools  # Stream labeling, tracing, graph inspection
 
 ## Quick Start
 
-```typescript
-import { fromArray, map, filter, observe } from "aeon-core";
-import { VirtualScheduler } from "aeon-scheduler";
+Aeon offers three distinct API styles. Pick whichever fits your preference.
 
-const scheduler = new VirtualScheduler();
+### Data-last (uncurried)
+
+Each function takes the source/event as its last argument, following the same
+convention as Haskell and @most/core. You compose by nesting calls. It's not
+the most ergonomic for long pipelines (deep nesting reads inside-out), but
+it's straightforward and TypeScript infers types correctly because all
+arguments are visible in a single call.
+
+```typescript
+import { fromArray, map, filter, observe } from "aeon-core"
+import { VirtualScheduler } from "aeon-scheduler"
+
+const scheduler = new VirtualScheduler()
 
 await observe(
   (v) => console.log(v),
@@ -47,36 +57,45 @@ await observe(
     filter((x) => x % 2 === 0, fromArray([1, 2, 3, 4, 5])),
   ),
   scheduler,
-);
+)
 // 4, 8, 12, 16, 20
 ```
 
-### Using `pipe`
+### Pipe
+
+For longer pipelines, `pipe` lets you write transformations top-to-bottom
+instead of inside-out. The `P` namespace provides curried, data-last versions
+of every operator. TypeScript infers types through the entire chain because
+`pipe` threads the output of each step into the next.
 
 ```typescript
-import { fromArray, pipe, observe, P } from "aeon-core";
+import { fromArray, pipe, observe, P } from "aeon-core"
 
 const result = pipe(
   fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
   P.filter((x) => x % 2 === 0),
   P.map((x) => x * 2),
   P.take(3),
-);
+)
 
-await observe((v) => console.log(v), result, scheduler);
+await observe((v) => console.log(v), result, scheduler)
 // 4, 8, 12
 ```
 
-### Using the fluent API
+### Fluent
+
+A chainable, method-style API for those who prefer dot-notation. Wrap any
+event with `fluent()` and chain operators directly. Same semantics and
+performance as the other styles.
 
 ```typescript
-import { fromArray, fluent } from "aeon-core";
+import { fromArray, fluent } from "aeon-core"
 
 await fluent(fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
   .filter((x) => x % 2 === 0)
   .map((x) => x * 2)
   .take(3)
-  .observe((v) => console.log(v), scheduler);
+  .observe((v) => console.log(v), scheduler)
 // 4, 8, 12
 ```
 
@@ -162,7 +181,7 @@ Tree-shaken bundles produced with esbuild (`pnpm bundle-size`):
 | Import | min+gzip | min+brotli |
 |---|---:|---:|
 | Minimal: `now`, `map`, `observe` + `DefaultScheduler` | **1.5 KB** | 1.3 KB |
-| Typical (data-first): 6 operators + scheduler | **1.9 KB** | 1.8 KB |
+| Typical (data-last): 6 operators + scheduler | **1.9 KB** | 1.8 KB |
 | `aeon-core` — every combinator, full re-export | **8.3 KB** | 7.5 KB |
 | `aeon-core` + `aeon-scheduler` — full re-export | **9.4 KB** | 8.4 KB |
 

@@ -35,7 +35,7 @@ const FIXTURES = [
     `,
   },
   {
-    name: "typical (data-first) — fromArray, filter, map, scan, take, observe",
+    name: "typical (data-last) — fromArray, filter, map, scan, take, observe",
     code: `
       import { fromArray, filter, map, scan, take, observe } from "aeon-core";
       import { DefaultScheduler } from "aeon-scheduler";
