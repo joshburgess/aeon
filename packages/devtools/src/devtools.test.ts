@@ -48,7 +48,6 @@ describe("trace", () => {
 
     const event = fromArray([1, 2])
     const traced = trace(event, { log: mockLog, label: "test" })
-
     ;(traced as unknown as Source<number, never>).run(
       {
         event() {},
@@ -94,7 +93,6 @@ describe("trace", () => {
 
     const event = label("clicks", fromArray([1]))
     const traced = trace(event, { log: mockLog })
-
     ;(traced as unknown as Source<number, never>).run(
       {
         event() {},

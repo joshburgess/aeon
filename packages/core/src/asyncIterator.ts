@@ -115,7 +115,6 @@ export const fromAsyncIterable = <A>(iterable: AsyncIterable<A>): Event<A, never
   _createEvent({
     run(sink: Sink<A, never>, scheduler: Scheduler): Disposable {
       let disposed = false
-
       ;(async () => {
         try {
           for await (const value of iterable) {
