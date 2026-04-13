@@ -5,15 +5,15 @@
  * synchronous event propagation through a typical pipeline.
  */
 
-import { bench, describe } from "vitest";
+import { bench, describe } from "vitest"
 
 // --- Pulse ---
-import { drain, filter, fromArray, map, reduce, scan } from "aeon-core";
-import { VirtualScheduler } from "aeon-scheduler";
+import { drain, filter, fromArray, map, reduce, scan } from "aeon-core"
+import { VirtualScheduler } from "aeon-scheduler"
 
 // --- @most/core ---
-import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core";
-import { newDefaultScheduler } from "@most/scheduler";
+import { filter as mostFilter, map as mostMap, scan as mostScan, runEffects } from "@most/core"
+import { newDefaultScheduler } from "@most/scheduler"
 
 // --- RxJS ---
 import {
@@ -22,47 +22,47 @@ import {
   from as rxFrom,
   map as rxMap,
   reduce as rxReduce,
-} from "rxjs";
+} from "rxjs"
 
 // --- Helpers ---
-import { add, double, isEven, range } from "./helpers.js";
+import { add, double, isEven, range } from "./helpers.js"
 
-const N = 1_000_000;
-const arr = range(N);
+const N = 1_000_000
+const arr = range(N)
 
 describe("filter → map → reduce (1M integers)", () => {
   bench("pulse", async () => {
-    const scheduler = new VirtualScheduler();
-    await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), scheduler);
-  });
+    const scheduler = new VirtualScheduler()
+    await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), scheduler)
+  })
 
   bench("@most/core", async () => {
-    const scheduler = newDefaultScheduler();
+    const scheduler = newDefaultScheduler()
     await runEffects(
       mostScan(add, 0, mostMap(double, mostFilter(isEven, mostFromArray(arr)))),
       scheduler,
-    );
-  });
+    )
+  })
 
   bench("rxjs", async () => {
-    await lastValueFrom(rxFrom(arr).pipe(rxFilter(isEven), rxMap(double), rxReduce(add, 0)));
-  });
+    await lastValueFrom(rxFrom(arr).pipe(rxFilter(isEven), rxMap(double), rxReduce(add, 0)))
+  })
 
   bench("native array", () => {
-    arr.filter(isEven).map(double).reduce(add, 0);
-  });
-});
+    arr.filter(isEven).map(double).reduce(add, 0)
+  })
+})
 
-import { newStream } from "@most/core";
+import { newStream } from "@most/core"
 // --- @most/core fromArray helper (inline to avoid import issues) ---
-import type { Stream } from "@most/types";
+import type { Stream } from "@most/types"
 
 const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   newStream((sink, scheduler) => {
-    const t = scheduler.currentTime();
+    const t = scheduler.currentTime()
     for (let i = 0; i < values.length; i++) {
-      sink.event(t, values[i]!);
+      sink.event(t, values[i]!)
     }
-    sink.end(t);
-    return { dispose() {} };
-  });
+    sink.end(t)
+    return { dispose() {} }
+  })

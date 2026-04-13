@@ -7,97 +7,97 @@
  * Uses monomorphic classes for V8 hidden class stability.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
-import { _createEvent, _getSource } from "../internal/event.js";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types"
+import { _createEvent, _getSource } from "../internal/event.js"
 
 class TraverseState<A, B, E> {
-  declare readonly sink: Sink<B, E>;
-  declare readonly f: (a: A) => Promise<B>;
-  declare readonly concurrency: number;
-  declare readonly buffer: { time: Time; value: A }[];
-  declare active: number;
-  declare outerEnded: boolean;
-  declare disposed: boolean;
-  declare lastTime: Time;
+  declare readonly sink: Sink<B, E>
+  declare readonly f: (a: A) => Promise<B>
+  declare readonly concurrency: number
+  declare readonly buffer: { time: Time; value: A }[]
+  declare active: number
+  declare outerEnded: boolean
+  declare disposed: boolean
+  declare lastTime: Time
 
   constructor(f: (a: A) => Promise<B>, concurrency: number, sink: Sink<B, E>, time: Time) {
-    this.f = f;
-    this.concurrency = concurrency;
-    this.sink = sink;
-    this.buffer = [];
-    this.active = 0;
-    this.outerEnded = false;
-    this.disposed = false;
-    this.lastTime = time;
+    this.f = f
+    this.concurrency = concurrency
+    this.sink = sink
+    this.buffer = []
+    this.active = 0
+    this.outerEnded = false
+    this.disposed = false
+    this.lastTime = time
   }
 
   tryDrain(): void {
     while (this.active < this.concurrency && this.buffer.length > 0) {
-      const { time, value } = this.buffer.shift()!;
-      this.startOne(time, value);
+      const { time, value } = this.buffer.shift()!
+      this.startOne(time, value)
     }
   }
 
   startOne(time: Time, value: A): void {
-    this.active++;
-    const f = this.f;
+    this.active++
+    const f = this.f
     f(value).then(
       (result) => {
-        if (this.disposed) return;
-        this.sink.event(time, result);
-        this.active--;
+        if (this.disposed) return
+        this.sink.event(time, result)
+        this.active--
         if (this.buffer.length > 0) {
-          this.tryDrain();
+          this.tryDrain()
         } else if (this.outerEnded && this.active === 0) {
-          this.sink.end(this.lastTime);
+          this.sink.end(this.lastTime)
         }
       },
       (err) => {
-        if (this.disposed) return;
-        this.sink.error(time, err as E);
+        if (this.disposed) return
+        this.sink.error(time, err as E)
       },
-    );
+    )
   }
 }
 
 class TraverseSink<A, B, E> implements Sink<A, E> {
-  declare readonly state: TraverseState<A, B, E>;
+  declare readonly state: TraverseState<A, B, E>
 
   constructor(state: TraverseState<A, B, E>) {
-    this.state = state;
+    this.state = state
   }
 
   event(time: Time, value: A): void {
-    this.state.lastTime = time;
+    this.state.lastTime = time
     if (this.state.active < this.state.concurrency) {
-      this.state.startOne(time, value);
+      this.state.startOne(time, value)
     } else {
-      this.state.buffer.push({ time, value });
+      this.state.buffer.push({ time, value })
     }
   }
 
   error(time: Time, err: E): void {
-    this.state.sink.error(time, err);
+    this.state.sink.error(time, err)
   }
 
   end(time: Time): void {
-    this.state.lastTime = time;
-    this.state.outerEnded = true;
+    this.state.lastTime = time
+    this.state.outerEnded = true
     if (this.state.active === 0 && this.state.buffer.length === 0) {
-      this.state.sink.end(time);
+      this.state.sink.end(time)
     }
   }
 }
 
 class TraverseSource<A, B, E> implements Source<B, E> {
-  declare readonly f: (a: A) => Promise<B>;
-  declare readonly concurrency: number;
-  declare readonly source: Source<A, E>;
+  declare readonly f: (a: A) => Promise<B>
+  declare readonly concurrency: number
+  declare readonly source: Source<A, E>
 
   constructor(f: (a: A) => Promise<B>, concurrency: number, source: Source<A, E>) {
-    this.f = f;
-    this.concurrency = concurrency;
-    this.source = source;
+    this.f = f
+    this.concurrency = concurrency
+    this.source = source
   }
 
   run(sink: Sink<B, E>, scheduler: Scheduler): Disposable {
@@ -106,15 +106,15 @@ class TraverseSource<A, B, E> implements Source<B, E> {
       this.concurrency,
       sink,
       scheduler.currentTime(),
-    );
-    const outerDisposable = this.source.run(new TraverseSink(state), scheduler);
+    )
+    const outerDisposable = this.source.run(new TraverseSink(state), scheduler)
 
     return {
       dispose() {
-        state.disposed = true;
-        outerDisposable.dispose();
+        state.disposed = true
+        outerDisposable.dispose()
       },
-    };
+    }
   }
 }
 
@@ -132,4 +132,4 @@ export const traverse = <A, B, E>(
   f: (a: A) => Promise<B>,
   concurrency: number,
   event: Event<A, E>,
-): Event<B, E> => _createEvent(new TraverseSource(f, concurrency, _getSource(event)));
+): Event<B, E> => _createEvent(new TraverseSource(f, concurrency, _getSource(event)))

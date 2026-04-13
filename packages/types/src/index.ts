@@ -13,7 +13,7 @@ export {
   TIME_ZERO,
   DURATION_ZERO,
   OFFSET_ZERO,
-} from "./branded.js";
+} from "./branded.js"
 
 export type {
   Disposable,
@@ -24,4 +24,4 @@ export type {
   Scheduler,
   Event,
   Behavior,
-} from "./interfaces.js";
+} from "./interfaces.js"

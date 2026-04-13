@@ -5,17 +5,17 @@
  * (source, sources, f, predicate, n, etc.) to reconstruct the pipeline.
  */
 
-import type { Event as PulseEvent } from "aeon-types";
-import { getLabel } from "./label.js";
+import type { Event as PulseEvent } from "aeon-types"
+import { getLabel } from "./label.js"
 
 /** A node in the stream graph tree. */
 export interface StreamNode {
   /** The operator or source type name (e.g., "map", "filter", "fromArray"). */
-  readonly type: string;
+  readonly type: string
   /** Debug label, if attached via label(). */
-  readonly label?: string;
+  readonly label?: string
   /** Child nodes (upstream sources). */
-  readonly children: readonly StreamNode[];
+  readonly children: readonly StreamNode[]
 }
 
 /**
@@ -32,41 +32,41 @@ export interface StreamNode {
  * ```
  */
 export const inspect = <A, E>(event: PulseEvent<A, E>): StreamNode => {
-  return inspectSource(event as unknown as Record<string, unknown>);
-};
+  return inspectSource(event as unknown as Record<string, unknown>)
+}
 
 const inspectSource = (source: Record<string, unknown>): StreamNode => {
-  const label = getLabel(source);
-  const ctor = source.constructor?.name ?? "unknown";
+  const label = getLabel(source)
+  const ctor = source.constructor?.name ?? "unknown"
 
   // Labeled source — unwrap and inspect inner
   if (label !== undefined && "source" in source) {
-    const inner = inspectSource(source["source"] as Record<string, unknown>);
-    return { type: inner.type, label, children: inner.children };
+    const inner = inspectSource(source["source"] as Record<string, unknown>)
+    return { type: inner.type, label, children: inner.children }
   }
 
   // Detect operator type from constructor name or shape
-  const type = classifySource(source, ctor);
+  const type = classifySource(source, ctor)
 
   // Collect children (upstream sources)
-  const children: StreamNode[] = [];
+  const children: StreamNode[] = []
 
   if ("source" in source && source["source"] != null) {
-    children.push(inspectSource(source["source"] as Record<string, unknown>));
+    children.push(inspectSource(source["source"] as Record<string, unknown>))
   }
 
   if ("sources" in source && Array.isArray(source["sources"])) {
     for (const s of source["sources"]) {
-      children.push(inspectSource(s as Record<string, unknown>));
+      children.push(inspectSource(s as Record<string, unknown>))
     }
   }
 
-  const node: StreamNode = { type, children };
+  const node: StreamNode = { type, children }
   if (label !== undefined) {
-    return { ...node, label };
+    return { ...node, label }
   }
-  return node;
-};
+  return node
+}
 
 const classifySource = (source: Record<string, unknown>, ctorName: string): string => {
   // Try constructor name first — works for all Pulse built-in sources
@@ -134,20 +134,20 @@ const classifySource = (source: Record<string, unknown>, ctorName: string): stri
     RangeSource: "range",
     ConstantSource: "constant",
     SliceSource: "slice",
-  };
+  }
 
   if (ctorName in nameMap) {
-    return nameMap[ctorName]!;
+    return nameMap[ctorName]!
   }
 
   // Fallback: detect by shape
-  if ("f" in source && "predicate" in source && "source" in source) return "filterMap";
-  if ("predicate" in source && "source" in source) return "filter";
-  if ("f" in source && "source" in source) return "map";
-  if ("sources" in source) return "merge";
-  if ("values" in source) return "fromArray";
-  if ("value" in source) return "now";
-  if ("period" in source) return "periodic";
+  if ("f" in source && "predicate" in source && "source" in source) return "filterMap"
+  if ("predicate" in source && "source" in source) return "filter"
+  if ("f" in source && "source" in source) return "map"
+  if ("sources" in source) return "merge"
+  if ("values" in source) return "fromArray"
+  if ("value" in source) return "now"
+  if ("period" in source) return "periodic"
 
-  return ctorName !== "Object" ? ctorName : "source";
-};
+  return ctorName !== "Object" ? ctorName : "source"
+}

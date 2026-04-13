@@ -4,8 +4,8 @@
  * Denotation: `constant(b, e) = [(t, b) | (t, _) ∈ e]`
  */
 
-import type { Event } from "aeon-types";
-import { map } from "./map.js";
+import type { Event } from "aeon-types"
+import { map } from "./map.js"
 
 /**
  * Replace every value in the stream with a constant.
@@ -13,4 +13,4 @@ import { map } from "./map.js";
  * Denotation: `constant(b, e) = map(_ => b, e)`
  */
 export const constant = <A, B, E>(value: B, event: Event<A, E>): Event<B, E> =>
-  map(() => value, event);
+  map(() => value, event)

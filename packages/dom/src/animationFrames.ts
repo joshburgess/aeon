@@ -4,32 +4,32 @@
  * Emits a DOMHighResTimeStamp on each requestAnimationFrame callback.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source } from "aeon-types";
-import { createEvent } from "./internal.js";
+import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source } from "aeon-types"
+import { createEvent } from "./internal.js"
 
 class AnimationFrameSource implements Source<DOMHighResTimeStamp, never> {
   run(sink: Sink<DOMHighResTimeStamp, never>, scheduler: Scheduler): Disposable {
-    let id = 0;
-    let disposed = false;
+    let id = 0
+    let disposed = false
 
     const tick = (timestamp: DOMHighResTimeStamp) => {
-      if (disposed) return;
-      sink.event(scheduler.currentTime(), timestamp);
-      id = requestAnimationFrame(tick);
-    };
+      if (disposed) return
+      sink.event(scheduler.currentTime(), timestamp)
+      id = requestAnimationFrame(tick)
+    }
 
-    id = requestAnimationFrame(tick);
+    id = requestAnimationFrame(tick)
 
     return {
       dispose() {
-        disposed = true;
-        cancelAnimationFrame(id);
+        disposed = true
+        cancelAnimationFrame(id)
       },
-    };
+    }
   }
 }
 
-const ANIMATION_FRAME_SOURCE = new AnimationFrameSource();
+const ANIMATION_FRAME_SOURCE = new AnimationFrameSource()
 
 /**
  * An Event that emits a DOMHighResTimeStamp on each animation frame.
@@ -39,4 +39,4 @@ const ANIMATION_FRAME_SOURCE = new AnimationFrameSource();
  * Cancels the animation frame loop when disposed.
  */
 export const animationFrames: PulseEvent<DOMHighResTimeStamp, never> =
-  createEvent(ANIMATION_FRAME_SOURCE);
+  createEvent(ANIMATION_FRAME_SOURCE)

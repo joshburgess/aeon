@@ -25,7 +25,7 @@
  * (the common case) satisfy this.
  */
 
-import type { CollectedEntry } from "aeon-test";
+import type { CollectedEntry } from "aeon-test"
 import type {
   Disposable,
   Duration,
@@ -35,80 +35,80 @@ import type {
   Sink,
   Source,
   Time,
-} from "aeon-types";
+} from "aeon-types"
 
 const toDelay = (offset: number): Duration => {
   if (offset < 0) {
-    throw new Error(`fromEntries: negative entry offset ${offset}`);
+    throw new Error(`fromEntries: negative entry offset ${offset}`)
   }
-  return offset as Duration;
-};
+  return offset as Duration
+}
 
 class EntriesSource<A, E> implements Source<A, E> {
-  declare readonly entries: readonly CollectedEntry<A, E>[];
+  declare readonly entries: readonly CollectedEntry<A, E>[]
 
   constructor(entries: readonly CollectedEntry<A, E>[]) {
-    this.entries = entries;
+    this.entries = entries
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    const scheduled: ScheduledTask[] = [];
-    let terminated = false;
+    const scheduled: ScheduledTask[] = []
+    let terminated = false
 
     const disposeAll = () => {
-      for (const s of scheduled) s.dispose();
-      scheduled.length = 0;
-    };
+      for (const s of scheduled) s.dispose()
+      scheduled.length = 0
+    }
 
     for (const entry of this.entries) {
-      if (terminated) break;
+      if (terminated) break
 
-      const delay = toDelay(entry.time as number);
+      const delay = toDelay(entry.time as number)
 
       if (entry.type === "event") {
-        const value = entry.value;
+        const value = entry.value
         scheduled.push(
           scheduler.scheduleTask(delay, {
             run(t: Time) {
-              sink.event(t, value);
+              sink.event(t, value)
             },
             error(t: Time, err: unknown) {
-              sink.error(t, err as E);
+              sink.error(t, err as E)
             },
             dispose() {},
           }),
-        );
+        )
       } else if (entry.type === "error") {
-        const err = entry.error;
-        terminated = true;
+        const err = entry.error
+        terminated = true
         scheduled.push(
           scheduler.scheduleTask(delay, {
             run(t: Time) {
-              sink.error(t, err);
+              sink.error(t, err)
             },
             error(t: Time, e: unknown) {
-              sink.error(t, e as E);
+              sink.error(t, e as E)
             },
             dispose() {},
           }),
-        );
+        )
       } else {
-        terminated = true;
+        terminated = true
         scheduled.push(
           scheduler.scheduleTask(delay, {
             run(t: Time) {
-              sink.end(t);
+              sink.end(t)
             },
             error(t: Time, e: unknown) {
-              sink.error(t, e as E);
+              sink.error(t, e as E)
             },
             dispose() {},
           }),
-        );
+        )
       }
     }
 
-    return { dispose: disposeAll };
+    return { dispose: disposeAll }
   }
 }
 
@@ -118,4 +118,4 @@ class EntriesSource<A, E> implements Source<A, E> {
  * have non-negative times.
  */
 export const fromEntries = <A, E = never>(entries: readonly CollectedEntry<A, E>[]): Event<A, E> =>
-  new EntriesSource(entries) as unknown as Event<A, E>;
+  new EntriesSource(entries) as unknown as Event<A, E>

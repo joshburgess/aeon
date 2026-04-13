@@ -7,21 +7,21 @@
  * `mergeMap(Infinity)`. Both are lawful; we exercise covariant + monad laws.
  */
 
-import { describe } from "@effect/vitest";
-import { toTime } from "aeon-types";
-import type { Event } from "aeon-types";
-import * as fc from "effect/FastCheck";
+import { describe } from "@effect/vitest"
+import { toTime } from "aeon-types"
+import type { Event } from "aeon-types"
+import * as fc from "effect/FastCheck"
 import {
   Covariant,
   Monad,
   type SequentialTypeLambda,
   fromEvent,
   toEvent,
-} from "../../src/Event/Sequential.js";
-import { arbLeafEvent } from "../helpers/arbLeafEvent.js";
-import { eqEventSeq } from "../helpers/eqEvent.js";
-import { covariantLaws } from "./covariantLaws.js";
-import { monadLaws } from "./monadLaws.js";
+} from "../../src/Event/Sequential.js"
+import { arbLeafEvent } from "../helpers/arbLeafEvent.js"
+import { eqEventSeq } from "../helpers/eqEvent.js"
+import { covariantLaws } from "./covariantLaws.js"
+import { monadLaws } from "./monadLaws.js"
 
 // `terminators: ["end"]` — chain stalls if an inner never ends, and its
 // error handling is not strictly equational across flatMap restructurings
@@ -35,22 +35,22 @@ import { monadLaws } from "./monadLaws.js";
 // `flatMap(m, a => flatMap(f(a), g))` can stack delays differently, and the
 // difference grows as O(|m|·|f(a)|·max-delay). With these bounds both nestings
 // finish well under the 100_000 equality horizon below.
-const LEAF_HORIZON = 100;
-const LEAF_MAX = 4;
+const LEAF_HORIZON = 100
+const LEAF_MAX = 4
 const arbNumberSeq = arbLeafEvent<number, string>({
   value: fc.integer({ min: -100, max: 100 }),
   terminators: ["end"],
   horizon: LEAF_HORIZON,
   maxLength: LEAF_MAX,
-}).map(fromEvent);
+}).map(fromEvent)
 
 // Compounded chain timings can push end-of-stream past the default 10k
 // horizon; use a much larger horizon so both LHS and RHS of associativity
 // actually run to completion and are compared on equal footing.
-const EQ_HORIZON = toTime(100_000);
+const EQ_HORIZON = toTime(100_000)
 
 const asEvent = <A, E>(fx: { readonly [k: symbol]: unknown } & Event<A, E>): Event<A, E> =>
-  toEvent(fx as never);
+  toEvent(fx as never)
 
 describe("Sequential — Covariant laws", () => {
   covariantLaws<SequentialTypeLambda, number, number, number, string>({
@@ -59,8 +59,8 @@ describe("Sequential — Covariant laws", () => {
     arbFToB: fc.func(fc.integer({ min: -100, max: 100 })),
     arbGToC: fc.func(fc.integer({ min: -100, max: 100 })),
     asEvent,
-  });
-});
+  })
+})
 
 describe("Sequential — Monad laws (chain-based)", () => {
   monadLaws<SequentialTypeLambda, number, number, number, string>({
@@ -77,5 +77,5 @@ describe("Sequential — Monad laws (chain-based)", () => {
     // differently, shifting end times. See `eqEventSeq` for the
     // sequence-only equality used here.
     eqAssoc: (a, b) => eqEventSeq(a, b, { horizon: EQ_HORIZON }),
-  });
-});
+  })
+})

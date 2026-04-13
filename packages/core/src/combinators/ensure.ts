@@ -5,60 +5,60 @@
  * The cleanup runs exactly once.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types";
-import { Pipe } from "../internal/Pipe.js";
-import { _createEvent, _getSource } from "../internal/event.js";
+import type { Disposable, Event, Scheduler, Sink, Source, Time } from "aeon-types"
+import { Pipe } from "../internal/Pipe.js"
+import { _createEvent, _getSource } from "../internal/event.js"
 
 class EnsureSink<A, E> extends Pipe<A, E> {
-  declare readonly cleanup: () => void;
-  declare called: boolean;
+  declare readonly cleanup: () => void
+  declare called: boolean
 
   constructor(cleanup: () => void, sink: Sink<A, E>) {
-    super(sink);
-    this.cleanup = cleanup;
-    this.called = false;
+    super(sink)
+    this.cleanup = cleanup
+    this.called = false
   }
 
   event(time: Time, value: A): void {
-    this.sink.event(time, value);
+    this.sink.event(time, value)
   }
 
   error(time: Time, err: E): void {
-    this.runCleanup();
-    this.sink.error(time, err);
+    this.runCleanup()
+    this.sink.error(time, err)
   }
 
   end(time: Time): void {
-    this.runCleanup();
-    this.sink.end(time);
+    this.runCleanup()
+    this.sink.end(time)
   }
 
   runCleanup(): void {
     if (!this.called) {
-      this.called = true;
-      this.cleanup();
+      this.called = true
+      this.cleanup()
     }
   }
 }
 
 class EnsureSource<A, E> implements Source<A, E> {
-  declare readonly cleanup: () => void;
-  declare readonly source: Source<A, E>;
+  declare readonly cleanup: () => void
+  declare readonly source: Source<A, E>
 
   constructor(cleanup: () => void, source: Source<A, E>) {
-    this.cleanup = cleanup;
-    this.source = source;
+    this.cleanup = cleanup
+    this.source = source
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    const ensureSink = new EnsureSink(this.cleanup, sink);
-    const d = this.source.run(ensureSink, scheduler);
+    const ensureSink = new EnsureSink(this.cleanup, sink)
+    const d = this.source.run(ensureSink, scheduler)
     return {
       dispose() {
-        ensureSink.runCleanup();
-        d.dispose();
+        ensureSink.runCleanup()
+        d.dispose()
       },
-    };
+    }
   }
 }
 
@@ -67,4 +67,4 @@ class EnsureSource<A, E> implements Source<A, E> {
  * The cleanup runs exactly once regardless of which termination path fires.
  */
 export const ensure = <A, E>(cleanup: () => void, event: Event<A, E>): Event<A, E> =>
-  _createEvent(new EnsureSource(cleanup, _getSource(event)));
+  _createEvent(new EnsureSource(cleanup, _getSource(event)))

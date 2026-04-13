@@ -14,28 +14,28 @@
  *   - Errors drawn from the caller's arbitrary for `E` (default: string)
  */
 
-import type { CollectedEntry } from "aeon-test";
-import { type Time, toTime } from "aeon-types";
-import type { Event } from "aeon-types";
-import * as fc from "effect/FastCheck";
-import { fromEntries } from "./fromEntries.js";
+import type { CollectedEntry } from "aeon-test"
+import { type Time, toTime } from "aeon-types"
+import type { Event } from "aeon-types"
+import * as fc from "effect/FastCheck"
+import { fromEntries } from "./fromEntries.js"
 
 export interface ArbLeafEventOptions<A, E> {
   /** Arbitrary for emitted values. */
-  readonly value: fc.Arbitrary<A>;
+  readonly value: fc.Arbitrary<A>
   /** Arbitrary for error payloads. Default: `fc.string()` (typed as E). */
-  readonly error?: fc.Arbitrary<E>;
+  readonly error?: fc.Arbitrary<E>
   /** Maximum exclusive time for entries. Default: 1000. */
-  readonly horizon?: number;
+  readonly horizon?: number
   /** Max number of value entries. Default: 8. */
-  readonly maxLength?: number;
+  readonly maxLength?: number
   /**
    * If `true`, every generated stream carries either an `end` or `error`
    * terminator (never the `open` case). Useful for chain/zip-based law tests
    * where non-terminating inners cause deadlock or ambiguous end semantics.
    * Default: `false`.
    */
-  readonly requireTerminator?: boolean;
+  readonly requireTerminator?: boolean
   /**
    * Set of terminator shapes to draw from when a terminator is selected.
    * Defaults to all three (`"end" | "error" | "open"`). Pass `["end"]` to
@@ -45,7 +45,7 @@ export interface ArbLeafEventOptions<A, E> {
    * even while an inner is running, so error counts differ between
    * `flatMap(flatMap(m, f), g)` and `flatMap(m, flatMap(f, g))`).
    */
-  readonly terminators?: readonly ("end" | "error" | "open")[];
+  readonly terminators?: readonly ("end" | "error" | "open")[]
   /**
    * Minimum number of value entries. Default: `0`. Set to `1` (combined with
    * `requireTerminator: true`) when the test harness cannot reason about
@@ -53,7 +53,7 @@ export interface ArbLeafEventOptions<A, E> {
    * forever waiting for the inner to end before consuming the next outer
    * emission.
    */
-  readonly minLength?: number;
+  readonly minLength?: number
 }
 
 /**
@@ -63,22 +63,22 @@ export interface ArbLeafEventOptions<A, E> {
 export const arbLeafEventTrace = <A, E = string>(
   options: ArbLeafEventOptions<A, E>,
 ): fc.Arbitrary<{
-  readonly entries: CollectedEntry<A, E>[];
-  readonly event: Event<A, E>;
+  readonly entries: CollectedEntry<A, E>[]
+  readonly event: Event<A, E>
 }> => {
-  const horizon = options.horizon ?? 1000;
-  const maxLength = options.maxLength ?? 8;
-  const minLength = options.minLength ?? 0;
-  const requireTerminator = options.requireTerminator ?? false;
-  const errArb = (options.error ?? fc.string()) as fc.Arbitrary<E>;
+  const horizon = options.horizon ?? 1000
+  const maxLength = options.maxLength ?? 8
+  const minLength = options.minLength ?? 0
+  const requireTerminator = options.requireTerminator ?? false
+  const errArb = (options.error ?? fc.string()) as fc.Arbitrary<E>
 
   const allowed = (options.terminators ?? ["end", "error", "open"]).filter(
     (t) => !(requireTerminator && t === "open"),
-  );
+  )
   if (allowed.length === 0) {
-    throw new Error("arbLeafEvent: empty terminator set");
+    throw new Error("arbLeafEvent: empty terminator set")
   }
-  const terminatorArb = fc.oneof(...allowed.map((t) => fc.constant<"end" | "error" | "open">(t)));
+  const terminatorArb = fc.oneof(...allowed.map((t) => fc.constant<"end" | "error" | "open">(t)))
 
   return fc
     .tuple(
@@ -98,23 +98,23 @@ export const arbLeafEventTrace = <A, E = string>(
           type: "event",
           time: toTime(t),
           value: v,
-        }));
+        }))
 
-      let entries: CollectedEntry<A, E>[] = sortedValues;
+      let entries: CollectedEntry<A, E>[] = sortedValues
       if (terminator !== "open") {
         const lastTime =
-          sortedValues.length > 0 ? (sortedValues[sortedValues.length - 1]!.time as number) : 0;
-        const tAbs = Math.max(termTime, lastTime);
+          sortedValues.length > 0 ? (sortedValues[sortedValues.length - 1]!.time as number) : 0
+        const tAbs = Math.max(termTime, lastTime)
         const term: CollectedEntry<A, E> =
           terminator === "end"
             ? { type: "end", time: toTime(tAbs) }
-            : { type: "error", time: toTime(tAbs), error: errValue };
-        entries = [...sortedValues, term];
+            : { type: "error", time: toTime(tAbs), error: errValue }
+        entries = [...sortedValues, term]
       }
 
-      return { entries, event: fromEntries(entries) };
-    });
-};
+      return { entries, event: fromEntries(entries) }
+    })
+}
 
 /**
  * Convenience: arbitrary yielding just the `Event`, discarding the trace.
@@ -122,10 +122,10 @@ export const arbLeafEventTrace = <A, E = string>(
  */
 export const arbLeafEvent = <A, E = string>(
   options: ArbLeafEventOptions<A, E>,
-): fc.Arbitrary<Event<A, E>> => arbLeafEventTrace(options).map((x) => x.event);
+): fc.Arbitrary<Event<A, E>> => arbLeafEventTrace(options).map((x) => x.event)
 
 /**
  * Stand-ins for `horizon` and `Time` used above.
  * Exposed here so tests can advance schedulers beyond the generator's range.
  */
-export const defaultArbHorizon: Time = toTime(1000);
+export const defaultArbHorizon: Time = toTime(1000)

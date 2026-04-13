@@ -15,40 +15,40 @@ import {
   type Time,
   timeAdd,
   toTime,
-} from "aeon-types";
-import type { Clock } from "./clock.js";
-import { PerformanceClock } from "./clock.js";
-import { BinaryHeap, type HeapEntry } from "./heap.js";
+} from "aeon-types"
+import type { Clock } from "./clock.js"
+import { PerformanceClock } from "./clock.js"
+import { BinaryHeap, type HeapEntry } from "./heap.js"
 
 interface PendingTask {
-  readonly task: Task;
-  readonly time: Time;
-  cancelled: boolean;
-  timerId: ReturnType<typeof setTimeout> | undefined;
-  heapEntry: HeapEntry<PendingTask> | undefined;
+  readonly task: Task
+  readonly time: Time
+  cancelled: boolean
+  timerId: ReturnType<typeof setTimeout> | undefined
+  heapEntry: HeapEntry<PendingTask> | undefined
 }
 
 export class DefaultScheduler implements Scheduler {
-  private declare readonly clock: Clock;
-  private declare readonly heap: BinaryHeap<PendingTask>;
-  private declare microtaskQueued: boolean;
-  private declare readonly microtaskBuffer: PendingTask[];
+  private declare readonly clock: Clock
+  private declare readonly heap: BinaryHeap<PendingTask>
+  private declare microtaskQueued: boolean
+  private declare readonly microtaskBuffer: PendingTask[]
 
   constructor(clock: Clock = new PerformanceClock()) {
-    this.clock = clock;
-    this.heap = new BinaryHeap();
-    this.microtaskQueued = false;
-    this.microtaskBuffer = [];
+    this.clock = clock
+    this.heap = new BinaryHeap()
+    this.microtaskQueued = false
+    this.microtaskBuffer = []
   }
 
   currentTime(): Time {
-    return this.clock.now();
+    return this.clock.now()
   }
 
   scheduleTask(delay: Duration, task: Task): ScheduledTask {
-    const now = this.clock.now();
-    const time = timeAdd(now, delay);
-    const delayMs = delay as number;
+    const now = this.clock.now()
+    const time = timeAdd(now, delay)
+    const delayMs = delay as number
 
     const pending: PendingTask = {
       task,
@@ -56,26 +56,26 @@ export class DefaultScheduler implements Scheduler {
       cancelled: false,
       timerId: undefined,
       heapEntry: undefined,
-    };
+    }
 
     if (delayMs <= 0) {
       // Schedule as microtask
-      this.microtaskBuffer.push(pending);
+      this.microtaskBuffer.push(pending)
       if (!this.microtaskQueued) {
-        this.microtaskQueued = true;
-        queueMicrotask(() => this.flushMicrotasks());
+        this.microtaskQueued = true
+        queueMicrotask(() => this.flushMicrotasks())
       }
     } else {
       // Schedule as setTimeout
-      pending.heapEntry = this.heap.insert(pending, time as number);
+      pending.heapEntry = this.heap.insert(pending, time as number)
       pending.timerId = setTimeout(() => {
         if (!pending.cancelled) {
           if (pending.heapEntry) {
-            this.heap.remove(pending.heapEntry);
+            this.heap.remove(pending.heapEntry)
           }
-          this.runTask(pending);
+          this.runTask(pending)
         }
-      }, delayMs);
+      }, delayMs)
     }
 
     return {
@@ -83,67 +83,67 @@ export class DefaultScheduler implements Scheduler {
       time,
       dispose() {
         if (!pending.cancelled) {
-          pending.cancelled = true;
+          pending.cancelled = true
           if (pending.timerId !== undefined) {
-            clearTimeout(pending.timerId);
+            clearTimeout(pending.timerId)
           }
         }
       },
-    };
+    }
   }
 
   relative(offset: Offset): Scheduler {
-    return new RelativeScheduler(offset, this);
+    return new RelativeScheduler(offset, this)
   }
 
   cancelTask(st: ScheduledTask): void {
-    st.dispose();
+    st.dispose()
   }
 
   private flushMicrotasks(): void {
-    this.microtaskQueued = false;
-    const buffer = this.microtaskBuffer.splice(0);
+    this.microtaskQueued = false
+    const buffer = this.microtaskBuffer.splice(0)
     for (const pending of buffer) {
       if (!pending.cancelled) {
-        this.runTask(pending);
+        this.runTask(pending)
       }
     }
   }
 
   private runTask(pending: PendingTask): void {
     try {
-      pending.task.run(this.clock.now());
+      pending.task.run(this.clock.now())
     } catch (err) {
-      pending.task.error(this.clock.now(), err);
+      pending.task.error(this.clock.now(), err)
     }
   }
 }
 
 class RelativeScheduler implements Scheduler {
-  private declare readonly offset: Offset;
-  private declare readonly parent: Scheduler;
+  private declare readonly offset: Offset
+  private declare readonly parent: Scheduler
 
   constructor(offset: Offset, parent: Scheduler) {
-    this.offset = offset;
-    this.parent = parent;
+    this.offset = offset
+    this.parent = parent
   }
 
   currentTime(): Time {
-    return toTime((this.parent.currentTime() as number) + (this.offset as number));
+    return toTime((this.parent.currentTime() as number) + (this.offset as number))
   }
 
   scheduleTask(delay: Duration, task: Task): ScheduledTask {
-    return this.parent.scheduleTask(delay, task);
+    return this.parent.scheduleTask(delay, task)
   }
 
   relative(offset: Offset): Scheduler {
     return new RelativeScheduler(
       toTime((this.offset as number) + (offset as number)) as unknown as Offset,
       this.parent,
-    );
+    )
   }
 
   cancelTask(st: ScheduledTask): void {
-    this.parent.cancelTask(st);
+    this.parent.cancelTask(st)
   }
 }

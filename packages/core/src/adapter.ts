@@ -6,8 +6,8 @@
  * RxJS's Subject, but as a clean separated push/pull pair.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types";
-import { _createEvent } from "./internal/event.js";
+import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types"
+import { _createEvent } from "./internal/event.js"
 
 /**
  * Create an imperative push adapter.
@@ -17,26 +17,26 @@ import { _createEvent } from "./internal/event.js";
  * - `event` is a subscribable Event stream
  */
 export const createAdapter = <A, E = never>(): [push: (value: A) => void, event: Event<A, E>] => {
-  const sinks = new Set<{ sink: Sink<A, E>; scheduler: Scheduler }>();
+  const sinks = new Set<{ sink: Sink<A, E>; scheduler: Scheduler }>()
 
   const push = (value: A): void => {
-    if (sinks.size === 0) return;
+    if (sinks.size === 0) return
     for (const { sink, scheduler } of sinks) {
-      sink.event(scheduler.currentTime(), value);
+      sink.event(scheduler.currentTime(), value)
     }
-  };
+  }
 
   const event = _createEvent<A, E>({
     run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-      const entry = { sink, scheduler };
-      sinks.add(entry);
+      const entry = { sink, scheduler }
+      sinks.add(entry)
       return {
         dispose() {
-          sinks.delete(entry);
+          sinks.delete(entry)
         },
-      };
+      }
     },
-  });
+  })
 
-  return [push, event];
-};
+  return [push, event]
+}

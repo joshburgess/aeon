@@ -4,59 +4,59 @@
  * Tests the overhead of creating and subscribing to inner streams.
  */
 
-import { bench, describe } from "vitest";
+import { bench, describe } from "vitest"
 
 // --- Pulse ---
-import { chain, drain, fromArray } from "aeon-core";
-import { VirtualScheduler } from "aeon-scheduler";
+import { chain, drain, fromArray } from "aeon-core"
+import { VirtualScheduler } from "aeon-scheduler"
 
 // --- @most/core ---
-import { chain as mostChain, runEffects } from "@most/core";
-import { newStream } from "@most/core";
-import { newDefaultScheduler } from "@most/scheduler";
-import type { Stream } from "@most/types";
+import { chain as mostChain, runEffects } from "@most/core"
+import { newStream } from "@most/core"
+import { newDefaultScheduler } from "@most/scheduler"
+import type { Stream } from "@most/types"
 
 // --- RxJS ---
-import { lastValueFrom, mergeMap, EMPTY as rxEmpty, from as rxFrom } from "rxjs";
+import { lastValueFrom, mergeMap, EMPTY as rxEmpty, from as rxFrom } from "rxjs"
 
 // --- Helpers ---
-import { range } from "./helpers.js";
+import { range } from "./helpers.js"
 
-const OUTER = 1000;
-const INNER = 1000;
-const outerArr = range(OUTER);
-const innerArr = range(INNER);
+const OUTER = 1000
+const INNER = 1000
+const outerArr = range(OUTER)
+const innerArr = range(INNER)
 
 const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   newStream((sink, scheduler) => {
-    const t = scheduler.currentTime();
+    const t = scheduler.currentTime()
     for (let i = 0; i < values.length; i++) {
-      sink.event(t, values[i]!);
+      sink.event(t, values[i]!)
     }
-    sink.end(t);
-    return { dispose() {} };
-  });
+    sink.end(t)
+    return { dispose() {} }
+  })
 
 describe("flatMap (1000 × 1000)", () => {
   bench("pulse", async () => {
-    const scheduler = new VirtualScheduler();
+    const scheduler = new VirtualScheduler()
     await drain(
       chain(() => fromArray(innerArr), fromArray(outerArr)),
       scheduler,
-    );
-  });
+    )
+  })
 
   bench("@most/core", async () => {
-    const scheduler = newDefaultScheduler();
+    const scheduler = newDefaultScheduler()
     await runEffects(
       mostChain(() => mostFromArray(innerArr), mostFromArray(outerArr)),
       scheduler,
-    );
-  });
+    )
+  })
 
   bench("rxjs", async () => {
     await lastValueFrom(rxFrom(outerArr).pipe(mergeMap(() => rxFrom(innerArr), 1)), {
       defaultValue: undefined,
-    });
-  });
-});
+    })
+  })
+})

@@ -6,8 +6,8 @@
  * and disposed when the last consumer unsubscribes.
  */
 
-import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types";
-import { _createEvent, _getSource } from "./internal/event.js";
+import type { Disposable, Event, Scheduler, Sink, Time } from "aeon-types"
+import { _createEvent, _getSource } from "./internal/event.js"
 
 /**
  * Share a single subscription to the source Event among all downstream consumers.
@@ -18,56 +18,56 @@ import { _createEvent, _getSource } from "./internal/event.js";
  * - If a new subscriber arrives after disposal, the source is re-subscribed
  */
 export const multicast = <A, E>(event: Event<A, E>): Event<A, E> => {
-  const source = _getSource(event);
-  const sinks = new Set<Sink<A, E>>();
-  let sourceDisposable: Disposable | undefined;
-  let scheduler: Scheduler | undefined;
-  let ended = false;
+  const source = _getSource(event)
+  const sinks = new Set<Sink<A, E>>()
+  let sourceDisposable: Disposable | undefined
+  let scheduler: Scheduler | undefined
+  let ended = false
 
   return _createEvent({
     run(sink: Sink<A, E>, sched: Scheduler): Disposable {
-      sinks.add(sink);
+      sinks.add(sink)
 
       if (sinks.size === 1) {
         // First subscriber — connect to source
-        scheduler = sched;
-        ended = false;
+        scheduler = sched
+        ended = false
         sourceDisposable = source.run(
           {
             event(time: Time, value: A) {
               for (const s of sinks) {
-                s.event(time, value);
+                s.event(time, value)
               }
             },
             error(time: Time, err: E) {
               for (const s of sinks) {
-                s.error(time, err);
+                s.error(time, err)
               }
             },
             end(time: Time) {
-              ended = true;
+              ended = true
               for (const s of sinks) {
-                s.end(time);
+                s.end(time)
               }
             },
           },
           sched,
-        );
+        )
       } else if (ended) {
         // Source already ended — immediately end new subscriber
-        sink.end(sched.currentTime());
+        sink.end(sched.currentTime())
       }
 
       return {
         dispose() {
-          sinks.delete(sink);
+          sinks.delete(sink)
           if (sinks.size === 0 && sourceDisposable !== undefined) {
-            sourceDisposable.dispose();
-            sourceDisposable = undefined;
-            scheduler = undefined;
+            sourceDisposable.dispose()
+            sourceDisposable = undefined
+            scheduler = undefined
           }
         },
-      };
+      }
     },
-  });
-};
+  })
+}
