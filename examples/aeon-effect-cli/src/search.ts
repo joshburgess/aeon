@@ -30,6 +30,8 @@ import { map as coreMap, createAdapter, debounce, dedupe, observe, switchLatest 
 import { fromStream } from "aeon-effect/bridge";
 import { DefaultScheduler } from "aeon-scheduler";
 import { toDuration } from "aeon-types";
+import * as Clock from "effect/Clock";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 
@@ -80,14 +82,19 @@ const log = (msg: string) => {
 // simulate I/O, filters the dataset, and logs cancellation on interrupt.
 // Because it's a real Effect, switchLatest's dispose -> fiber interrupt
 // pipeline fires `onInterrupt` even mid-sleep.
+// Canonical Effect program: read the clock via `Clock.currentTimeMillis`,
+// lift every side effect (logging) through `Effect.sync`, sleep via a
+// `Duration`, and attach an interrupt handler that fires when the fiber is
+// cancelled by switchLatest disposing the previous inner Event.
 const searchEffect = (query: string): Effect.Effect<SearchResult> =>
   Effect.gen(function* () {
-    const start = Date.now();
-    log(`  [effect] searching "${query}"...`);
-    yield* Effect.sleep("800 millis");
+    const start = yield* Clock.currentTimeMillis;
+    yield* Effect.sync(() => log(`  [effect] searching "${query}"...`));
+    yield* Effect.sleep(Duration.millis(800));
     const q = query.toLowerCase();
     const matches = DATASET.filter((w) => w.includes(q));
-    return { query, matches, took: Date.now() - start };
+    const end = yield* Clock.currentTimeMillis;
+    return { query, matches, took: end - start };
   }).pipe(Effect.onInterrupt(() => Effect.sync(() => log(`  [effect] cancelled "${query}"`))));
 
 const scheduler = new DefaultScheduler();

@@ -2,8 +2,8 @@
  * Live GitHub user search.
  *
  * A realistic pipeline: aeon owns the DOM event stream (debounce, dedupe,
- * switchLatest), Effect owns the HTTP fetch (typed errors, interruption via
- * AbortController), and `fromStream` bridges them.
+ * switchLatest), Effect owns the HTTP fetch (Schema-decoded responses,
+ * tagged errors, fiber-driven AbortSignal), and `fromStream` bridges them.
  *
  * Pipeline:
  *
@@ -11,7 +11,7 @@
  *     -> coreMap(read .value) -> trim
  *     -> debounce 300ms
  *     -> dedupe
- *     -> coreMap(q -> cons(Loading, fromStream(fetchEffect(q))))
+ *     -> coreMap(q -> cons(Loading, fromStream(fetchProgram(q))))
  *     -> switchLatest       (disposes prior fetch -> interrupts fiber -> aborts request)
  *     -> observe(render)
  */
@@ -30,64 +30,85 @@ import {
 import { fromStream } from "aeon-effect/bridge";
 import { DefaultScheduler } from "aeon-scheduler";
 import { toDuration } from "aeon-types";
+import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
-// --- Types ------------------------------------------------------------------
+// --- Schema + typed errors --------------------------------------------------
 
-interface GitHubUser {
-  readonly id: number;
-  readonly login: string;
-  readonly avatar_url: string;
-  readonly html_url: string;
-}
+const GitHubUser = Schema.Struct({
+  id: Schema.Number,
+  login: Schema.String,
+  avatar_url: Schema.String,
+  html_url: Schema.String,
+});
+type GitHubUser = Schema.Schema.Type<typeof GitHubUser>;
 
-type FetchError =
-  | { readonly _tag: "HttpError"; readonly status: number }
-  | { readonly _tag: "NetworkError"; readonly message: string };
+const SearchResponse = Schema.Struct({
+  items: Schema.Array(GitHubUser),
+});
 
-type SearchState =
-  | { readonly _tag: "Idle" }
-  | { readonly _tag: "Loading"; readonly query: string }
-  | {
-      readonly _tag: "Success";
-      readonly query: string;
-      readonly users: readonly GitHubUser[];
-    }
-  | {
-      readonly _tag: "Error";
-      readonly query: string;
-      readonly error: FetchError;
-    };
+class HttpError extends Data.TaggedError("HttpError")<{
+  readonly status: number;
+}> {}
 
-// --- Effect side: HTTP with interruption ------------------------------------
-// Effect.async lets us return a cleanup effect that fires on fiber interrupt.
-// switchLatest disposes the previous inner Event on a new query, which
-// interrupts the fiber, which aborts the fetch.
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  readonly message: string;
+}> {}
+
+class ParseError extends Data.TaggedError("ParseError")<{
+  readonly message: string;
+}> {}
+
+type FetchError = HttpError | NetworkError | ParseError;
+
+// --- HTTP program -----------------------------------------------------------
+// Canonical Effect HTTP: `Effect.tryPromise`'s `try` callback receives an
+// AbortSignal that is already wired to the running fiber, so when the fiber
+// is interrupted (by switchLatest disposing the previous inner Event) the
+// fetch aborts at the transport layer. Schema decodes the response and
+// pipes ParseError through the typed error channel.
 const fetchUsers = (query: string): Effect.Effect<readonly GitHubUser[], FetchError> =>
-  Effect.async<readonly GitHubUser[], FetchError>((resume) => {
-    const ac = new AbortController();
+  Effect.gen(function* () {
     const url = `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=10`;
-    fetch(url, { signal: ac.signal })
-      .then(async (res) => {
-        if (!res.ok) {
-          resume(Effect.fail({ _tag: "HttpError", status: res.status }));
-          return;
-        }
-        const json = (await res.json()) as { items: GitHubUser[] };
-        resume(Effect.succeed(json.items));
-      })
-      .catch((err: unknown) => {
-        if ((err as { name?: string })?.name === "AbortError") return;
-        resume(
-          Effect.fail({
-            _tag: "NetworkError",
-            message: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      });
-    return Effect.sync(() => ac.abort());
+
+    const response = yield* Effect.tryPromise({
+      try: (signal) => fetch(url, { signal }),
+      catch: (cause) =>
+        new NetworkError({
+          message: cause instanceof Error ? cause.message : String(cause),
+        }),
+    });
+
+    if (!response.ok) {
+      return yield* new HttpError({ status: response.status });
+    }
+
+    const json = yield* Effect.tryPromise({
+      try: () => response.json() as Promise<unknown>,
+      catch: (cause) =>
+        new NetworkError({
+          message: cause instanceof Error ? cause.message : String(cause),
+        }),
+    });
+
+    const decoded = yield* Schema.decodeUnknown(SearchResponse)(json).pipe(
+      Effect.mapError((error) => new ParseError({ message: error.message })),
+    );
+
+    return decoded.items;
   });
+
+// --- View state -------------------------------------------------------------
+
+type SearchState = Data.TaggedEnum<{
+  Idle: object;
+  Loading: { readonly query: string };
+  Success: { readonly query: string; readonly users: readonly GitHubUser[] };
+  Error: { readonly query: string; readonly error: FetchError };
+}>;
+const SearchState = Data.taggedEnum<SearchState>();
 
 // --- DOM plumbing -----------------------------------------------------------
 
@@ -113,61 +134,67 @@ const queries: Event<string, never> = dedupe(
 );
 
 const stateForQuery = (q: string): Event<SearchState, never> => {
-  if (q.length === 0) return now<SearchState>({ _tag: "Idle" });
-  logLine(`dispatch  "${q}"`);
-  const effect = fetchUsers(q).pipe(
-    Effect.map((users): SearchState => ({ _tag: "Success", query: q, users })),
+  if (q.length === 0) return now<SearchState>(SearchState.Idle());
+
+  // Canonical Effect pipeline: map success into the Success state, catchAll
+  // typed errors into the Error state (so the Stream never fails), tap a
+  // dispatch log, and run onInterrupt to log fiber interruption. onInterrupt
+  // fires on switchLatest's dispose -> fiber interrupt, which also aborts
+  // the fetch via the tryPromise AbortSignal wiring.
+  const program = fetchUsers(q).pipe(
+    Effect.map((users): SearchState => SearchState.Success({ query: q, users })),
     Effect.catchAll(
-      (error): Effect.Effect<SearchState> => Effect.succeed({ _tag: "Error", query: q, error }),
+      (error): Effect.Effect<SearchState> => Effect.succeed(SearchState.Error({ query: q, error })),
     ),
+    Effect.tap(() => Effect.sync(() => logLine(`success   "${q}"`))),
     Effect.onInterrupt(() => Effect.sync(() => logLine(`cancel    "${q}"`))),
   );
-  const result = fromStream<SearchState, never>(Stream.fromEffect(effect));
-  return cons<SearchState, never>({ _tag: "Loading", query: q }, result);
+
+  logLine(`dispatch  "${q}"`);
+  const result = fromStream<SearchState, never>(Stream.fromEffect(program));
+  return cons<SearchState, never>(SearchState.Loading({ query: q }), result);
 };
 
 const states = switchLatest(coreMap(stateForQuery, queries));
 
 // --- Render -----------------------------------------------------------------
 
-const render = (s: SearchState) => {
-  switch (s._tag) {
-    case "Idle":
-      $status.textContent = "";
-      $results.innerHTML = "";
-      return;
-    case "Loading":
-      $status.textContent = `searching "${s.query}"...`;
-      return;
-    case "Success": {
-      $status.textContent = `${s.users.length} results for "${s.query}"`;
-      logLine(`success   "${s.query}" (${s.users.length})`);
-      $results.innerHTML = "";
-      for (const u of s.users) {
-        const li = document.createElement("li");
-        const img = document.createElement("img");
-        img.src = u.avatar_url;
-        img.alt = "";
-        const a = document.createElement("a");
-        a.href = u.html_url;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.textContent = u.login;
-        li.append(img, a);
-        $results.appendChild(li);
-      }
-      return;
+const render = SearchState.$match({
+  Idle: () => {
+    $status.textContent = "";
+    $results.innerHTML = "";
+  },
+  Loading: ({ query }) => {
+    $status.textContent = `searching "${query}"...`;
+  },
+  Success: ({ query, users }) => {
+    $status.textContent = `${users.length} results for "${query}"`;
+    $results.innerHTML = "";
+    for (const u of users) {
+      const li = document.createElement("li");
+      const img = document.createElement("img");
+      img.src = u.avatar_url;
+      img.alt = "";
+      const a = document.createElement("a");
+      a.href = u.html_url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = u.login;
+      li.append(img, a);
+      $results.appendChild(li);
     }
-    case "Error": {
-      const detail =
-        s.error._tag === "HttpError" ? `HTTP ${s.error.status}` : `network: ${s.error.message}`;
-      $status.textContent = `error for "${s.query}": ${detail}`;
-      logLine(`error     "${s.query}" ${detail}`);
-      $results.innerHTML = "";
-      return;
-    }
-  }
-};
+  },
+  Error: ({ query, error }) => {
+    const detail =
+      error._tag === "HttpError"
+        ? `HTTP ${error.status}`
+        : error._tag === "ParseError"
+          ? `parse: ${error.message}`
+          : `network: ${error.message}`;
+    $status.textContent = `error for "${query}": ${detail}`;
+    $results.innerHTML = "";
+  },
+});
 
 observe(render, states, scheduler).catch((err) => {
   logLine(`fatal ${String(err)}`);

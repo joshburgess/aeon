@@ -7,7 +7,11 @@ Small Vite + TypeScript browser app that demonstrates a realistic `aeon-effect` 
 Classic "live search as you type" UI, but built around the aeon + Effect split:
 
 - **aeon** owns the input stream: `createAdapter` pushes DOM `input` events, then `debounce(300ms)` and `dedupe` filter the flood.
-- **Effect** owns the fetch: `Effect.async` wraps `fetch` with an `AbortController`, so the cleanup effect aborts the request when the fiber is interrupted. Typed `HttpError` / `NetworkError` via `Effect.fail`.
+- **Effect** owns the HTTP program, written in canonical style:
+  - `Effect.tryPromise({ try: (signal) => fetch(url, { signal }), catch: ... })`. The `AbortSignal` comes from the running fiber, so fiber interruption aborts the request at the transport layer. No manual `AbortController` plumbing.
+  - Typed errors with `Data.TaggedError`: `HttpError`, `NetworkError`, `ParseError`.
+  - `Schema.Struct` + `Schema.decodeUnknown` to parse the response, with `Effect.mapError` routing schema failures into `ParseError`.
+  - `Data.taggedEnum` for the `SearchState` view model + `SearchState.$match` for rendering.
 - **`fromStream`** glues them. `switchLatest` over the per-query inner Events disposes the previous one when a new query arrives, which interrupts the Effect fiber, which aborts the in-flight request.
 
 The state machine (`Idle | Loading | Success | Error`) is emitted via `cons(Loading, fromStream(effect))` so each query synchronously shows "Loading" before the result lands.
