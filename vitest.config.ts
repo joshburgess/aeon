@@ -10,10 +10,11 @@ export default defineConfig({
       "aeon-test": path.resolve(__dirname, "packages/test/src/index.ts"),
       "aeon-dom": path.resolve(__dirname, "packages/dom/src/index.ts"),
       "aeon-devtools": path.resolve(__dirname, "packages/devtools/src/index.ts"),
+      "aeon-effect": path.resolve(__dirname, "packages/effect/src/index.ts"),
     },
   },
   test: {
-    include: ["packages/*/src/**/*.test.ts"],
+    include: ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.test.ts"],
     passWithNoTests: true,
   },
   bench: {
