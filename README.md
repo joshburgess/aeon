@@ -1,6 +1,6 @@
 # Aeon
 
-A denotationally-designed reactive programming library for TypeScript.
+A high performance, denotationally designed reactive programming library for TypeScript.
 
 Aeon provides two core abstractions with precise mathematical semantics:
 
