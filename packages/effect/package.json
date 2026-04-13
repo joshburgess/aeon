@@ -1,0 +1,96 @@
+{
+  "name": "aeon-effect",
+  "version": "0.1.0",
+  "description": "Effect ecosystem integration for Aeon reactive streams — typeclass instances and Stream bridge",
+  "license": "MIT",
+  "author": "Josh Burgess",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshburgess/aeon",
+    "directory": "packages/effect"
+  },
+  "homepage": "https://github.com/joshburgess/aeon#readme",
+  "bugs": "https://github.com/joshburgess/aeon/issues",
+  "keywords": ["reactive", "streams", "frp", "effect", "typeclass", "adapter"],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./Event": {
+      "import": {
+        "types": "./dist/Event.d.ts",
+        "default": "./dist/Event.js"
+      },
+      "require": {
+        "types": "./dist/Event.d.cts",
+        "default": "./dist/Event.cjs"
+      }
+    },
+    "./Event/Zip": {
+      "import": {
+        "types": "./dist/Event/Zip.d.ts",
+        "default": "./dist/Event/Zip.js"
+      },
+      "require": {
+        "types": "./dist/Event/Zip.d.cts",
+        "default": "./dist/Event/Zip.cjs"
+      }
+    },
+    "./Event/Sequential": {
+      "import": {
+        "types": "./dist/Event/Sequential.d.ts",
+        "default": "./dist/Event/Sequential.js"
+      },
+      "require": {
+        "types": "./dist/Event/Sequential.d.cts",
+        "default": "./dist/Event/Sequential.cjs"
+      }
+    },
+    "./bridge": {
+      "import": {
+        "types": "./dist/bridge.d.ts",
+        "default": "./dist/bridge.js"
+      },
+      "require": {
+        "types": "./dist/bridge.d.cts",
+        "default": "./dist/bridge.cjs"
+      }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "aeon-types": "workspace:*",
+    "aeon-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.21.0",
+    "@effect/typeclass": "^0.40.0"
+  },
+  "devDependencies": {
+    "@effect/typeclass": "^0.40.0",
+    "@effect/vitest": "^0.29.0",
+    "aeon-scheduler": "workspace:*",
+    "aeon-test": "workspace:*",
+    "effect": "^3.21.0",
+    "fast-check": "^4.6.0",
+    "typescript": "^5.7.2"
+  }
+}

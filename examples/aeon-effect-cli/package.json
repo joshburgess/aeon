@@ -1,0 +1,23 @@
+{
+  "name": "aeon-effect-cli-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive stdin-driven live search: aeon events + Effect tasks + the bridge",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/search.ts"
+  },
+  "dependencies": {
+    "aeon-core": "workspace:*",
+    "aeon-effect": "workspace:*",
+    "aeon-scheduler": "workspace:*",
+    "aeon-types": "workspace:*",
+    "effect": "^3.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
