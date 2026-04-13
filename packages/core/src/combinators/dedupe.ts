@@ -12,23 +12,27 @@ import { _createEvent, _getSource } from "../internal/event.js"
 
 class DedupeSink<A, E> extends Pipe<A, E> {
   declare readonly eq: (a: A, b: A) => boolean
-  declare prev: A | typeof UNSET
+  declare prev: A
+  declare init: boolean
 
   constructor(eq: (a: A, b: A) => boolean, sink: Sink<A, E>) {
     super(sink)
     this.eq = eq
-    this.prev = UNSET
+    this.prev = undefined!
+    this.init = true
   }
 
   event(time: Time, value: A): void {
-    if (this.prev === UNSET || !this.eq(this.prev as A, value)) {
+    if (this.init) {
+      this.init = false
+      this.prev = value
+      this.sink.event(time, value)
+    } else if (!this.eq(this.prev, value)) {
       this.prev = value
       this.sink.event(time, value)
     }
   }
 }
-
-const UNSET: unique symbol = Symbol("unset")
 
 class DedupeSource<A, E> implements Source<A, E> {
   declare readonly eq: (a: A, b: A) => boolean
