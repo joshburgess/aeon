@@ -2,8 +2,7 @@
 
 Aeon takes direct inspiration from [@most/core](https://github.com/mostjs/core),
 which pioneered a reactive streams architecture designed so that
-[V8](https://v8.dev/) can aggressively inline and optimize method call sites
-throughout the event pipeline. Most notably, @most/core uses monomorphic class
+[V8](https://v8.dev/) can aggressively inline and optimize. Most notably, @most/core uses monomorphic class
 hierarchies
 for its Source and Sink types — each operator gets its own dedicated class with
 a fixed shape, so V8 can build stable hidden classes and inline method dispatch
