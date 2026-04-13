@@ -13,73 +13,73 @@ import type {
   Sink,
   Source,
   Time,
-} from "aeon-types";
-import { toDuration, toTime } from "aeon-types";
-import { type MarbleEntry, parseMarble } from "./marble.js";
+} from "aeon-types"
+import { toDuration, toTime } from "aeon-types"
+import { type MarbleEntry, parseMarble } from "./marble.js"
 
 class MarbleSource<A, E> implements Source<A, E> {
-  declare readonly entries: MarbleEntry<A, E>[];
+  declare readonly entries: MarbleEntry<A, E>[]
 
   constructor(entries: MarbleEntry<A, E>[]) {
-    this.entries = entries;
+    this.entries = entries
   }
 
   run(sink: Sink<A, E>, scheduler: Scheduler): Disposable {
-    const disposables: Disposable[] = [];
-    const currentTime = scheduler.currentTime() as number;
+    const disposables: Disposable[] = []
+    const currentTime = scheduler.currentTime() as number
 
     for (const entry of this.entries) {
-      const delay = toDuration((entry.time as number) - currentTime);
+      const delay = toDuration((entry.time as number) - currentTime)
 
       switch (entry.type) {
         case "event": {
-          const value = entry.value;
+          const value = entry.value
           disposables.push(
             scheduler.scheduleTask(delay, {
               run(t: Time) {
-                sink.event(t, value);
+                sink.event(t, value)
               },
               error(t: Time, err: unknown) {
-                sink.error(t, err as E);
+                sink.error(t, err as E)
               },
               dispose() {},
             }),
-          );
-          break;
+          )
+          break
         }
         case "error": {
-          const error = entry.error;
+          const error = entry.error
           disposables.push(
             scheduler.scheduleTask(delay, {
               run(t: Time) {
-                sink.error(t, error);
+                sink.error(t, error)
               },
               error() {},
               dispose() {},
             }),
-          );
-          break;
+          )
+          break
         }
         case "end": {
           disposables.push(
             scheduler.scheduleTask(delay, {
               run(t: Time) {
-                sink.end(t);
+                sink.end(t)
               },
               error() {},
               dispose() {},
             }),
-          );
-          break;
+          )
+          break
         }
       }
     }
 
     return {
       dispose() {
-        for (const d of disposables) d.dispose();
+        for (const d of disposables) d.dispose()
       },
-    };
+    }
   }
 }
 
@@ -100,6 +100,6 @@ export const testEvent = <A, E = never>(
   error?: E,
   timeUnit?: number,
 ): PulseEvent<A, E> => {
-  const entries = parseMarble<A, E>(marble, values, error, timeUnit);
-  return new MarbleSource(entries) as unknown as PulseEvent<A, E>;
-};
+  const entries = parseMarble<A, E>(marble, values, error, timeUnit)
+  return new MarbleSource(entries) as unknown as PulseEvent<A, E>
+}

@@ -6,20 +6,20 @@
  * methods across all sink subtypes.
  */
 
-import type { Sink, Time } from "aeon-types";
+import type { Sink, Time } from "aeon-types"
 
 export class Pipe<A, E> {
-  declare readonly sink: Sink<A, E>;
+  declare readonly sink: Sink<A, E>
 
   constructor(sink: Sink<A, E>) {
-    this.sink = sink;
+    this.sink = sink
   }
 
   error(time: Time, err: E): void {
-    this.sink.error(time, err);
+    this.sink.error(time, err)
   }
 
   end(time: Time): void {
-    this.sink.end(time);
+    this.sink.end(time)
   }
 }

@@ -5,13 +5,13 @@
  * Denotational meanings are stated in JSDoc.
  */
 
-import type { Duration, Offset, Time } from "./branded.js";
+import type { Duration, Offset, Time } from "./branded.js"
 
 // --- Disposable ---
 
 /** A handle to a resource that can be released. */
 export interface Disposable {
-  dispose(): void;
+  dispose(): void
 }
 
 // --- Sink ---
@@ -24,11 +24,11 @@ export interface Disposable {
  */
 export interface Sink<A, E = never> {
   /** Receive a value at a point in time. */
-  event(time: Time, value: A): void;
+  event(time: Time, value: A): void
   /** Receive an error at a point in time. */
-  error(time: Time, err: E): void;
+  error(time: Time, err: E): void
   /** Signal that no more events will arrive. */
-  end(time: Time): void;
+  end(time: Time): void
 }
 
 // --- Source ---
@@ -40,22 +40,22 @@ export interface Sink<A, E = never> {
  * that may terminate or error.
  */
 export interface Source<A, E = never> {
-  run(sink: Sink<A, E>, scheduler: Scheduler): Disposable;
+  run(sink: Sink<A, E>, scheduler: Scheduler): Disposable
 }
 
 // --- Task & ScheduledTask ---
 
 /** A unit of work to be executed by the scheduler. */
 export interface Task {
-  run(time: Time): void;
-  error(time: Time, err: unknown): void;
-  dispose(): void;
+  run(time: Time): void
+  error(time: Time, err: unknown): void
+  dispose(): void
 }
 
 /** A task that has been scheduled for future execution. */
 export interface ScheduledTask extends Disposable {
-  readonly task: Task;
-  readonly time: Time;
+  readonly task: Task
+  readonly time: Time
 }
 
 // --- Scheduler ---
@@ -68,21 +68,21 @@ export interface ScheduledTask extends Disposable {
  */
 export interface Scheduler {
   /** The current time according to this scheduler. */
-  currentTime(): Time;
+  currentTime(): Time
 
   /** Schedule a task to run after a delay. */
-  scheduleTask(delay: Duration, task: Task): ScheduledTask;
+  scheduleTask(delay: Duration, task: Task): ScheduledTask
 
   /** Create a child scheduler whose time is shifted by an offset. */
-  relative(offset: Offset): Scheduler;
+  relative(offset: Offset): Scheduler
 
   /** Cancel a previously scheduled task. */
-  cancelTask(task: ScheduledTask): void;
+  cancelTask(task: ScheduledTask): void
 }
 
 // --- Opaque Event and Behavior types ---
 
-declare const EventBrand: unique symbol;
+declare const EventBrand: unique symbol
 
 /**
  * A discrete, time-indexed sequence of values.
@@ -91,10 +91,10 @@ declare const EventBrand: unique symbol;
  * terminating with an error of type E.
  */
 export type Event<A, E = never> = {
-  readonly [EventBrand]: [A, E];
-};
+  readonly [EventBrand]: [A, E]
+}
 
-declare const BehaviorBrand: unique symbol;
+declare const BehaviorBrand: unique symbol
 
 /**
  * A continuous, time-varying value.
@@ -103,5 +103,5 @@ declare const BehaviorBrand: unique symbol;
  * possibly failing with an error of type E.
  */
 export type Behavior<A, E = never> = {
-  readonly [BehaviorBrand]: [A, E];
-};
+  readonly [BehaviorBrand]: [A, E]
+}

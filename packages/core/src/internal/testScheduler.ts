@@ -17,39 +17,39 @@ import {
   timeAdd,
   timeShift,
   toTime,
-} from "aeon-types";
+} from "aeon-types"
 
 interface PendingTask {
-  readonly time: Time;
-  readonly task: Task;
-  cancelled: boolean;
+  readonly time: Time
+  readonly task: Task
+  cancelled: boolean
 }
 
 export class TestScheduler implements Scheduler {
-  private now: Time;
-  private queue: PendingTask[];
+  private now: Time
+  private queue: PendingTask[]
 
   constructor() {
-    this.now = TIME_ZERO;
-    this.queue = [];
+    this.now = TIME_ZERO
+    this.queue = []
   }
 
   currentTime(): Time {
-    return this.now;
+    return this.now
   }
 
   scheduleTask(delay: Duration, task: Task): ScheduledTask {
-    const time = timeAdd(this.now, delay);
-    const pending: PendingTask = { time, task, cancelled: false };
-    this.queue.push(pending);
-    this.queue.sort((a, b) => (a.time as number) - (b.time as number));
+    const time = timeAdd(this.now, delay)
+    const pending: PendingTask = { time, task, cancelled: false }
+    this.queue.push(pending)
+    this.queue.sort((a, b) => (a.time as number) - (b.time as number))
     return {
       task,
       time,
       dispose() {
-        pending.cancelled = true;
+        pending.cancelled = true
       },
-    };
+    }
   }
 
   relative(offset: Offset): Scheduler {
@@ -58,26 +58,26 @@ export class TestScheduler implements Scheduler {
       scheduleTask: (delay, task) => this.scheduleTask(delay, task),
       relative: (o) => this.relative(o),
       cancelTask: (st) => this.cancelTask(st),
-    };
-    return shifted;
+    }
+    return shifted
   }
 
   cancelTask(st: ScheduledTask): void {
-    st.dispose();
+    st.dispose()
   }
 
   /** Advance time to the given point, executing all tasks up to that time. */
   advanceTo(time: Time): void {
     while (this.queue.length > 0) {
-      const next = this.queue[0]!;
-      if ((next.time as number) > (time as number)) break;
-      this.queue.shift();
+      const next = this.queue[0]!
+      if ((next.time as number) > (time as number)) break
+      this.queue.shift()
       if (!next.cancelled) {
-        this.now = next.time;
-        next.task.run(next.time);
+        this.now = next.time
+        next.task.run(next.time)
       }
     }
-    this.now = time;
+    this.now = time
   }
 
   /** Run all pending tasks regardless of time. */
@@ -85,7 +85,7 @@ export class TestScheduler implements Scheduler {
     const maxTime =
       this.queue.length > 0
         ? toTime(Math.max(...this.queue.map((t) => t.time as number)))
-        : this.now;
-    this.advanceTo(maxTime);
+        : this.now
+    this.advanceTo(maxTime)
   }
 }

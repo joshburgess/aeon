@@ -6,4 +6,4 @@
 //   aeon-effect/Event/Sequential — newtype with chain-based Monad
 //   aeon-effect/bridge           — toStream / fromStream
 
-export { toStream, fromStream, type ToStreamOptions } from "./bridge.js";
+export { toStream, fromStream, type ToStreamOptions } from "./bridge.js"

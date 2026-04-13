@@ -20,6 +20,11 @@
       }
     }
   },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded"
+    }
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",

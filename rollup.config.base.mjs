@@ -1,5 +1,5 @@
-import resolve from "@rollup/plugin-node-resolve";
-import { swc } from "rollup-plugin-swc3";
+import resolve from "@rollup/plugin-node-resolve"
+import { swc } from "rollup-plugin-swc3"
 
 export function createRollupConfig({ input = "src/index.ts", external = [] }) {
   return {
@@ -36,5 +36,5 @@ export function createRollupConfig({ input = "src/index.ts", external = [] }) {
         sourceMaps: true,
       }),
     ],
-  };
+  }
 }

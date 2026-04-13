@@ -18,14 +18,14 @@
  * Default is 1ms per unit.
  */
 
-import type { Time } from "aeon-types";
-import { toTime } from "aeon-types";
+import type { Time } from "aeon-types"
+import { toTime } from "aeon-types"
 
 /** A parsed marble event. */
 export type MarbleEntry<A, E> =
   | { readonly type: "event"; readonly time: Time; readonly value: A }
   | { readonly type: "error"; readonly time: Time; readonly error: E }
-  | { readonly type: "end"; readonly time: Time };
+  | { readonly type: "end"; readonly time: Time }
 
 /**
  * Parse a marble string into a sequence of timed entries.
@@ -41,76 +41,76 @@ export const parseMarble = <A, E = never>(
   error?: E,
   timeUnit = 1,
 ): MarbleEntry<A, E>[] => {
-  const entries: MarbleEntry<A, E>[] = [];
-  let time = 0;
-  let inGroup = false;
+  const entries: MarbleEntry<A, E>[] = []
+  let time = 0
+  let inGroup = false
 
   for (let i = 0; i < marble.length; i++) {
-    const ch = marble[i]!;
+    const ch = marble[i]!
 
     switch (ch) {
       case "-":
-        if (!inGroup) time += timeUnit;
-        break;
+        if (!inGroup) time += timeUnit
+        break
 
       case "(":
-        inGroup = true;
-        break;
+        inGroup = true
+        break
 
       case ")":
-        inGroup = false;
-        if (!inGroup) time += timeUnit;
-        break;
+        inGroup = false
+        if (!inGroup) time += timeUnit
+        break
 
       case "|":
-        entries.push({ type: "end", time: toTime(time) });
-        if (!inGroup) time += timeUnit;
-        break;
+        entries.push({ type: "end", time: toTime(time) })
+        if (!inGroup) time += timeUnit
+        break
 
       case "#":
-        entries.push({ type: "error", time: toTime(time), error: error as E });
-        if (!inGroup) time += timeUnit;
-        break;
+        entries.push({ type: "error", time: toTime(time), error: error as E })
+        if (!inGroup) time += timeUnit
+        break
 
       case " ":
-        break;
+        break
 
       default: {
-        const value = values[ch];
+        const value = values[ch]
         if (value === undefined) {
-          throw new Error(`Marble character '${ch}' not found in values map`);
+          throw new Error(`Marble character '${ch}' not found in values map`)
         }
-        entries.push({ type: "event", time: toTime(time), value });
-        if (!inGroup) time += timeUnit;
-        break;
+        entries.push({ type: "event", time: toTime(time), value })
+        if (!inGroup) time += timeUnit
+        break
       }
     }
   }
 
-  return entries;
-};
+  return entries
+}
 
 /**
  * Compute the total duration of a marble string (in time units).
  */
 export const marbleDuration = (marble: string, timeUnit = 1): number => {
-  let time = 0;
-  let inGroup = false;
+  let time = 0
+  let inGroup = false
 
   for (let i = 0; i < marble.length; i++) {
-    const ch = marble[i]!;
+    const ch = marble[i]!
     if (ch === "(") {
-      inGroup = true;
-      continue;
+      inGroup = true
+      continue
     }
     if (ch === ")") {
-      inGroup = false;
-      time += timeUnit;
-      continue;
+      inGroup = false
+      time += timeUnit
+      continue
     }
-    if (ch === " ") continue;
-    if (!inGroup) time += timeUnit;
+    if (ch === " ") continue
+    if (!inGroup) time += timeUnit
   }
 
-  return time;
-};
+  return time
+}

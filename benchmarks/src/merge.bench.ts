@@ -5,53 +5,53 @@
  * many synchronous sources.
  */
 
-import { bench, describe } from "vitest";
+import { bench, describe } from "vitest"
 
 // --- Pulse ---
-import { drain, fromArray, merge } from "aeon-core";
-import { VirtualScheduler } from "aeon-scheduler";
+import { drain, fromArray, merge } from "aeon-core"
+import { VirtualScheduler } from "aeon-scheduler"
 
 // --- @most/core ---
-import { mergeArray as mostMergeArray, runEffects } from "@most/core";
-import { newStream } from "@most/core";
-import { newDefaultScheduler } from "@most/scheduler";
-import type { Stream } from "@most/types";
+import { mergeArray as mostMergeArray, runEffects } from "@most/core"
+import { newStream } from "@most/core"
+import { newDefaultScheduler } from "@most/scheduler"
+import type { Stream } from "@most/types"
 
 // --- RxJS ---
-import { lastValueFrom, from as rxFrom, merge as rxMerge } from "rxjs";
+import { lastValueFrom, from as rxFrom, merge as rxMerge } from "rxjs"
 
 // --- Helpers ---
-import { range } from "./helpers.js";
+import { range } from "./helpers.js"
 
-const STREAM_COUNT = 100;
-const ELEMENTS_PER = 10_000;
-const arr = range(ELEMENTS_PER);
+const STREAM_COUNT = 100
+const ELEMENTS_PER = 10_000
+const arr = range(ELEMENTS_PER)
 
 const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   newStream((sink, scheduler) => {
-    const t = scheduler.currentTime();
+    const t = scheduler.currentTime()
     for (let i = 0; i < values.length; i++) {
-      sink.event(t, values[i]!);
+      sink.event(t, values[i]!)
     }
-    sink.end(t);
-    return { dispose() {} };
-  });
+    sink.end(t)
+    return { dispose() {} }
+  })
 
 describe(`merge (${STREAM_COUNT} × ${ELEMENTS_PER} elements)`, () => {
   bench("pulse", async () => {
-    const scheduler = new VirtualScheduler();
-    const streams = Array.from({ length: STREAM_COUNT }, () => fromArray(arr));
-    await drain(merge(...streams), scheduler);
-  });
+    const scheduler = new VirtualScheduler()
+    const streams = Array.from({ length: STREAM_COUNT }, () => fromArray(arr))
+    await drain(merge(...streams), scheduler)
+  })
 
   bench("@most/core", async () => {
-    const scheduler = newDefaultScheduler();
-    const streams = Array.from({ length: STREAM_COUNT }, () => mostFromArray(arr));
-    await runEffects(mostMergeArray(streams), scheduler);
-  });
+    const scheduler = newDefaultScheduler()
+    const streams = Array.from({ length: STREAM_COUNT }, () => mostFromArray(arr))
+    await runEffects(mostMergeArray(streams), scheduler)
+  })
 
   bench("rxjs", async () => {
-    const streams = Array.from({ length: STREAM_COUNT }, () => rxFrom(arr));
-    await lastValueFrom(rxMerge(...streams), { defaultValue: undefined });
-  });
-});
+    const streams = Array.from({ length: STREAM_COUNT }, () => rxFrom(arr))
+    await lastValueFrom(rxMerge(...streams), { defaultValue: undefined })
+  })
+})

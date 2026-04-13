@@ -16,13 +16,13 @@
  * Streams have no notion of discrete emission time).
  */
 
-import * as Cause from "effect/Cause";
-import * as Effect from "effect/Effect";
-import * as Fiber from "effect/Fiber";
-import * as Option from "effect/Option";
-import * as Stream from "effect/Stream";
+import * as Cause from "effect/Cause"
+import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
+import * as Option from "effect/Option"
+import * as Stream from "effect/Stream"
 
-import type { Event, Scheduler, Sink, Source } from "aeon-types";
+import type { Event, Scheduler, Sink, Source } from "aeon-types"
 
 export interface ToStreamOptions {
   /**
@@ -34,7 +34,7 @@ export interface ToStreamOptions {
   readonly bufferSize?:
     | "unbounded"
     | number
-    | { readonly bufferSize: number; readonly strategy: "dropping" | "sliding" };
+    | { readonly bufferSize: number; readonly strategy: "dropping" | "sliding" }
 }
 
 /**
@@ -53,14 +53,14 @@ export const toStream = <A, E = never>(
   scheduler: Scheduler,
   options: ToStreamOptions = {},
 ): Stream.Stream<A, E, never> => {
-  const source = event as unknown as Source<A, E>;
+  const source = event as unknown as Source<A, E>
 
   const pushOptions =
     options.bufferSize === undefined || options.bufferSize === "unbounded"
       ? ({ bufferSize: "unbounded" } as const)
       : typeof options.bufferSize === "number"
         ? { bufferSize: options.bufferSize }
-        : options.bufferSize;
+        : options.bufferSize
 
   return Stream.asyncPush<A, E>(
     (emit) =>
@@ -70,22 +70,22 @@ export const toStream = <A, E = never>(
           // discrete emission timestamp, so aeon times don't round-trip.
           const sink: Sink<A, E> = {
             event(_time, value) {
-              emit.single(value);
+              emit.single(value)
             },
             error(_time, err) {
-              emit.fail(err);
+              emit.fail(err)
             },
             end(_time) {
-              emit.end();
+              emit.end()
             },
-          };
-          return source.run(sink, scheduler);
+          }
+          return source.run(sink, scheduler)
         }),
         (disposable) => Effect.sync(() => disposable.dispose()),
       ),
     pushOptions,
-  );
-};
+  )
+}
 
 /**
  * Lift an Effect `Stream` to an aeon `Event`.
@@ -109,42 +109,42 @@ export const toStream = <A, E = never>(
 export const fromStream = <A, E = never>(stream: Stream.Stream<A, E, never>): Event<A, E> => {
   const source: Source<A, E> = {
     run(sink, scheduler) {
-      let closed = false;
+      let closed = false
 
       const run = Stream.runForEach(stream, (a: A) =>
         Effect.sync(() => {
-          if (!closed) sink.event(scheduler.currentTime(), a);
+          if (!closed) sink.event(scheduler.currentTime(), a)
         }),
-      );
+      )
 
       const handled = Effect.matchCauseEffect(run, {
         onFailure: (cause) =>
           Effect.sync(() => {
-            if (closed) return;
-            if (Cause.isInterruptedOnly(cause)) return;
-            const failure = Cause.failureOption(cause);
+            if (closed) return
+            if (Cause.isInterruptedOnly(cause)) return
+            const failure = Cause.failureOption(cause)
             if (Option.isSome(failure)) {
-              sink.error(scheduler.currentTime(), failure.value);
+              sink.error(scheduler.currentTime(), failure.value)
             } else {
-              sink.error(scheduler.currentTime(), Cause.squash(cause) as E);
+              sink.error(scheduler.currentTime(), Cause.squash(cause) as E)
             }
           }),
         onSuccess: () =>
           Effect.sync(() => {
-            if (!closed) sink.end(scheduler.currentTime());
+            if (!closed) sink.end(scheduler.currentTime())
           }),
-      });
+      })
 
-      const fiber = Effect.runFork(handled);
+      const fiber = Effect.runFork(handled)
 
       return {
         dispose() {
-          if (closed) return;
-          closed = true;
-          Effect.runFork(Fiber.interrupt(fiber));
+          if (closed) return
+          closed = true
+          Effect.runFork(Fiber.interrupt(fiber))
         },
-      };
+      }
     },
-  };
-  return source as unknown as Event<A, E>;
-};
+  }
+  return source as unknown as Event<A, E>
+}

@@ -1,5 +1,5 @@
-import resolve from "@rollup/plugin-node-resolve";
-import { swc } from "rollup-plugin-swc3";
+import resolve from "@rollup/plugin-node-resolve"
+import { swc } from "rollup-plugin-swc3"
 
 const plugins = [
   resolve({ extensions: [".ts", ".js"] }),
@@ -18,9 +18,9 @@ const plugins = [
     },
     sourceMaps: true,
   }),
-];
+]
 
-const external = [/^aeon-/, /^effect/, /^@effect\//];
+const external = [/^aeon-/, /^effect/, /^@effect\//]
 
 const entries = [
   { input: "src/index.ts", name: "index" },
@@ -28,7 +28,7 @@ const entries = [
   { input: "src/Event/Zip.ts", name: "Event/Zip" },
   { input: "src/Event/Sequential.ts", name: "Event/Sequential" },
   { input: "src/bridge.ts", name: "bridge" },
-];
+]
 
 export default entries.map(({ input, name }) => ({
   input,
@@ -47,4 +47,4 @@ export default entries.map(({ input, name }) => ({
     },
   ],
   plugins,
-}));
+}))

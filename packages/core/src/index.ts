@@ -1,10 +1,10 @@
 // aeon-core — Event and Behavior implementations, combinators
 
 // Re-export types
-export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "aeon-types";
+export type { Event, Behavior, Sink, Source, Scheduler, Disposable } from "aeon-types"
 
 // Event constructors
-export { empty, never, now, at, fromArray, fromIterable, periodic, range } from "./constructors.js";
+export { empty, never, now, at, fromArray, fromIterable, periodic, range } from "./constructors.js"
 
 // Event combinators
 export {
@@ -57,7 +57,7 @@ export {
   count,
   all,
   elementAt,
-} from "./combinators/index.js";
+} from "./combinators/index.js"
 
 // Behavior constructors and combinators
 export {
@@ -79,22 +79,22 @@ export {
   integral,
   derivative,
   readBehavior,
-} from "./behavior.js";
+} from "./behavior.js"
 
 // Fluent API
-export { fluent, FluentEvent } from "./fluent.js";
+export { fluent, FluentEvent } from "./fluent.js"
 
 // Pipe utility
-export { pipe } from "./pipe.js";
+export { pipe } from "./pipe.js"
 
 // Pipeable (data-last) overloads
-export * as P from "./pipeable.js";
+export * as P from "./pipeable.js"
 
 // Adapter (imperative push)
-export { createAdapter } from "./adapter.js";
+export { createAdapter } from "./adapter.js"
 
 // Multicast (subscription sharing)
-export { multicast } from "./multicast.js";
+export { multicast } from "./multicast.js"
 
 // AsyncIterator integration
-export { toAsyncIterator, fromAsyncIterable } from "./asyncIterator.js";
+export { toAsyncIterator, fromAsyncIterable } from "./asyncIterator.js"

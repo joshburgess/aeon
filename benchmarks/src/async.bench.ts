@@ -13,7 +13,7 @@
  * cost through the Sink protocol, not sync loop compilation throughput.
  */
 
-import { bench, describe } from "vitest";
+import { bench, describe } from "vitest"
 
 // --- Pulse ---
 import {
@@ -32,8 +32,8 @@ import {
   scan,
   switchLatest,
   take,
-} from "aeon-core";
-import { VirtualScheduler } from "aeon-scheduler";
+} from "aeon-core"
+import { VirtualScheduler } from "aeon-scheduler"
 
 // --- @most/core ---
 import {
@@ -48,9 +48,9 @@ import {
   take as mostTake,
   newStream,
   runEffects,
-} from "@most/core";
-import { newDefaultScheduler } from "@most/scheduler";
-import type { Disposable as MostDisposable, Sink as MostSink, Stream } from "@most/types";
+} from "@most/core"
+import { newDefaultScheduler } from "@most/scheduler"
+import type { Disposable as MostDisposable, Sink as MostSink, Stream } from "@most/types"
 
 // --- RxJS ---
 import {
@@ -64,12 +64,12 @@ import {
   share as rxShare,
   take as rxTake,
   switchAll,
-} from "rxjs";
+} from "rxjs"
 
 // --- Helpers ---
-import { add, double, isEven, range } from "./helpers.js";
+import { add, double, isEven, range } from "./helpers.js"
 
-const N = 100_000;
+const N = 100_000
 
 // ============================================================
 // Adapter helpers
@@ -81,41 +81,41 @@ const pulseSubscribe = <A, E>(
   onEvent: (v: A) => void,
   scheduler: InstanceType<typeof VirtualScheduler>,
 ): Disposable => {
-  const source = event as unknown as Source<A, E>;
+  const source = event as unknown as Source<A, E>
   return source.run(
     {
       event(_t: Time, v: A) {
-        onEvent(v);
+        onEvent(v)
       },
       error() {},
       end() {},
     },
     scheduler,
-  );
-};
+  )
+}
 
 /** Create an imperative push adapter for @most/core. */
 const createMostAdapter = <A>(): [push: (value: A) => void, stream: Stream<A>] => {
-  const sinks = new Set<{ sink: MostSink<A>; scheduler: { currentTime(): number } }>();
+  const sinks = new Set<{ sink: MostSink<A>; scheduler: { currentTime(): number } }>()
 
   const push = (value: A): void => {
     for (const entry of sinks) {
-      entry.sink.event(entry.scheduler.currentTime(), value);
+      entry.sink.event(entry.scheduler.currentTime(), value)
     }
-  };
+  }
 
   const stream: Stream<A> = newStream((sink, scheduler) => {
-    const entry = { sink, scheduler };
-    sinks.add(entry);
+    const entry = { sink, scheduler }
+    sinks.add(entry)
     return {
       dispose() {
-        sinks.delete(entry);
+        sinks.delete(entry)
       },
-    };
-  });
+    }
+  })
 
-  return [push, mostMulticast(stream)];
-};
+  return [push, mostMulticast(stream)]
+}
 
 /** Subscribe to a @most/core Stream, returns a disposable. */
 const mostSubscribe = <A>(
@@ -126,14 +126,14 @@ const mostSubscribe = <A>(
   return stream.run(
     {
       event(_t: number, v: A) {
-        onEvent(v);
+        onEvent(v)
       },
       error(_t: number, _err: Error) {},
       end(_t: number) {},
     },
     scheduler,
-  );
-};
+  )
+}
 
 // ============================================================
 // 1. Imperative push through a pipeline
@@ -142,57 +142,57 @@ const mostSubscribe = <A>(
 
 describe("imperative push: filter → map → scan (100k events)", () => {
   bench("pulse", () => {
-    const scheduler = new VirtualScheduler();
-    const [push, event] = createAdapter<number>();
-    const pipeline = scan(add, 0, map(double, filter(isEven, event)));
+    const scheduler = new VirtualScheduler()
+    const [push, event] = createAdapter<number>()
+    const pipeline = scan(add, 0, map(double, filter(isEven, event)))
 
-    let last = 0;
+    let last = 0
     const d = pulseSubscribe(
       pipeline,
       (v) => {
-        last = v;
+        last = v
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < N; i++) push(i);
-    d.dispose();
-    return last;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    d.dispose()
+    return last
+  })
 
   bench("@most/core", () => {
-    const scheduler = newDefaultScheduler();
-    const [push, stream] = createMostAdapter<number>();
-    const pipeline = mostScan(add, 0, mostMap(double, mostFilter(isEven, stream)));
+    const scheduler = newDefaultScheduler()
+    const [push, stream] = createMostAdapter<number>()
+    const pipeline = mostScan(add, 0, mostMap(double, mostFilter(isEven, stream)))
 
-    let last = 0;
+    let last = 0
     const d = mostSubscribe(
       pipeline,
       (v) => {
-        last = v;
+        last = v
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < N; i++) push(i);
-    d.dispose();
-    return last;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    d.dispose()
+    return last
+  })
 
   bench("rxjs", () => {
-    const subject = new Subject<number>();
-    const pipeline = subject.pipe(rxFilter(isEven), rxMap(double), rxScan(add, 0));
+    const subject = new Subject<number>()
+    const pipeline = subject.pipe(rxFilter(isEven), rxMap(double), rxScan(add, 0))
 
-    let last = 0;
+    let last = 0
     const sub = pipeline.subscribe((v) => {
-      last = v;
-    });
+      last = v
+    })
 
-    for (let i = 0; i < N; i++) subject.next(i);
-    sub.unsubscribe();
-    return last;
-  });
-});
+    for (let i = 0; i < N; i++) subject.next(i)
+    sub.unsubscribe()
+    return last
+  })
+})
 
 // ============================================================
 // 2. Multicast fan-out: one source, multiple subscribers
@@ -200,72 +200,72 @@ describe("imperative push: filter → map → scan (100k events)", () => {
 
 describe("multicast fan-out: 1 source → 10 subscribers (100k events)", () => {
   bench("pulse", () => {
-    const scheduler = new VirtualScheduler();
-    const [push, event] = createAdapter<number>();
-    const shared = multicast(map(double, event));
+    const scheduler = new VirtualScheduler()
+    const [push, event] = createAdapter<number>()
+    const shared = multicast(map(double, event))
 
-    let total = 0;
-    const disposables: Disposable[] = [];
+    let total = 0
+    const disposables: Disposable[] = []
     for (let s = 0; s < 10; s++) {
       disposables.push(
         pulseSubscribe(
           shared,
           (v) => {
-            total += v;
+            total += v
           },
           scheduler,
         ),
-      );
+      )
     }
 
-    for (let i = 0; i < N; i++) push(i);
-    for (const d of disposables) d.dispose();
-    return total;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    for (const d of disposables) d.dispose()
+    return total
+  })
 
   bench("@most/core", () => {
-    const scheduler = newDefaultScheduler();
-    const [push, stream] = createMostAdapter<number>();
-    const shared = mostMulticast(mostMap(double, stream));
+    const scheduler = newDefaultScheduler()
+    const [push, stream] = createMostAdapter<number>()
+    const shared = mostMulticast(mostMap(double, stream))
 
-    let total = 0;
-    const disposables: MostDisposable[] = [];
+    let total = 0
+    const disposables: MostDisposable[] = []
     for (let s = 0; s < 10; s++) {
       disposables.push(
         mostSubscribe(
           shared,
           (v) => {
-            total += v;
+            total += v
           },
           scheduler,
         ),
-      );
+      )
     }
 
-    for (let i = 0; i < N; i++) push(i);
-    for (const d of disposables) d.dispose();
-    return total;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    for (const d of disposables) d.dispose()
+    return total
+  })
 
   bench("rxjs", () => {
-    const subject = new Subject<number>();
-    const shared = subject.pipe(rxMap(double), rxShare());
+    const subject = new Subject<number>()
+    const shared = subject.pipe(rxMap(double), rxShare())
 
-    let total = 0;
-    const subs = [];
+    let total = 0
+    const subs = []
     for (let s = 0; s < 10; s++) {
       subs.push(
         shared.subscribe((v) => {
-          total += v;
+          total += v
         }),
-      );
+      )
     }
 
-    for (let i = 0; i < N; i++) subject.next(i);
-    for (const s of subs) s.unsubscribe();
-    return total;
-  });
-});
+    for (let i = 0; i < N; i++) subject.next(i)
+    for (const s of subs) s.unsubscribe()
+    return total
+  })
+})
 
 // ============================================================
 // 3. Higher-order: mergeMap with sync inner streams
@@ -273,36 +273,36 @@ describe("multicast fan-out: 1 source → 10 subscribers (100k events)", () => {
 // ============================================================
 
 describe("mergeMap: 1k outer × 100 inner (100k total events)", () => {
-  const outer = range(1000);
-  const innerArr = range(100);
+  const outer = range(1000)
+  const innerArr = range(100)
 
   bench("pulse", async () => {
-    const scheduler = new VirtualScheduler();
+    const scheduler = new VirtualScheduler()
     await drain(
       pulseMergeMap(() => fromArray(innerArr), Number.POSITIVE_INFINITY, fromArray(outer)),
       scheduler,
-    );
-  });
+    )
+  })
 
   bench("@most/core", async () => {
-    const scheduler = newDefaultScheduler();
+    const scheduler = newDefaultScheduler()
     const mostInner = newStream((sink, sched) => {
-      const t = sched.currentTime();
-      for (let i = 0; i < 100; i++) sink.event(t, i);
-      sink.end(t);
-      return { dispose() {} };
-    });
+      const t = sched.currentTime()
+      for (let i = 0; i < 100; i++) sink.event(t, i)
+      sink.end(t)
+      return { dispose() {} }
+    })
     const mostOuter = newStream((sink, sched) => {
-      const t = sched.currentTime();
-      for (let i = 0; i < 1000; i++) sink.event(t, mostInner);
-      sink.end(t);
-      return { dispose() {} };
-    });
+      const t = sched.currentTime()
+      for (let i = 0; i < 1000; i++) sink.event(t, mostInner)
+      sink.end(t)
+      return { dispose() {} }
+    })
     await runEffects(
       mostChain((s: Stream<number>) => s, mostOuter),
       scheduler,
-    );
-  });
+    )
+  })
 
   bench("rxjs", async () => {
     await new Promise<void>((resolve) => {
@@ -310,12 +310,12 @@ describe("mergeMap: 1k outer × 100 inner (100k total events)", () => {
         .pipe(mergeMap(() => rxFrom(innerArr)))
         .subscribe({
           complete() {
-            resolve();
+            resolve()
           },
-        });
-    });
-  });
-});
+        })
+    })
+  })
+})
 
 // ============================================================
 // 4. switchLatest: rapidly switching inner streams
@@ -323,51 +323,51 @@ describe("mergeMap: 1k outer × 100 inner (100k total events)", () => {
 // ============================================================
 
 describe("switchLatest: 100 switches × 1k inner events", () => {
-  const outerCount = 100;
-  const innerArr = range(1000);
+  const outerCount = 100
+  const innerArr = range(1000)
 
   bench("pulse", async () => {
-    const scheduler = new VirtualScheduler();
-    const outers: Event<number, never>[] = [];
+    const scheduler = new VirtualScheduler()
+    const outers: Event<number, never>[] = []
     for (let i = 0; i < outerCount; i++) {
-      outers.push(fromArray(innerArr));
+      outers.push(fromArray(innerArr))
     }
-    await drain(switchLatest(fromArray(outers)), scheduler);
-  });
+    await drain(switchLatest(fromArray(outers)), scheduler)
+  })
 
   bench("@most/core", async () => {
-    const scheduler = newDefaultScheduler();
+    const scheduler = newDefaultScheduler()
     const mostInner = newStream((sink, sched) => {
-      const t = sched.currentTime();
-      for (let i = 0; i < 1000; i++) sink.event(t, i);
-      sink.end(t);
-      return { dispose() {} };
-    });
+      const t = sched.currentTime()
+      for (let i = 0; i < 1000; i++) sink.event(t, i)
+      sink.end(t)
+      return { dispose() {} }
+    })
     const mostOuter: Stream<Stream<number>> = newStream((sink, sched) => {
-      const t = sched.currentTime();
-      for (let i = 0; i < outerCount; i++) sink.event(t, mostInner);
-      sink.end(t);
-      return { dispose() {} };
-    });
-    await runEffects(mostSwitchLatest(mostOuter), scheduler);
-  });
+      const t = sched.currentTime()
+      for (let i = 0; i < outerCount; i++) sink.event(t, mostInner)
+      sink.end(t)
+      return { dispose() {} }
+    })
+    await runEffects(mostSwitchLatest(mostOuter), scheduler)
+  })
 
   bench("rxjs", async () => {
-    const outers = [];
+    const outers = []
     for (let i = 0; i < outerCount; i++) {
-      outers.push(rxFrom(innerArr));
+      outers.push(rxFrom(innerArr))
     }
     await new Promise<void>((resolve) => {
       rxFrom(outers)
         .pipe(switchAll())
         .subscribe({
           complete() {
-            resolve();
+            resolve()
           },
-        });
-    });
-  });
-});
+        })
+    })
+  })
+})
 
 // ============================================================
 // 5. Deep pipeline: 10 chained maps (per-event overhead scaling)
@@ -375,66 +375,66 @@ describe("switchLatest: 100 switches × 1k inner events", () => {
 
 describe("deep pipeline: 10 chained maps (100k push events)", () => {
   bench("pulse", () => {
-    const scheduler = new VirtualScheduler();
-    const [push, event] = createAdapter<number>();
-    let pipeline: Event<number, never> = event;
+    const scheduler = new VirtualScheduler()
+    const [push, event] = createAdapter<number>()
+    let pipeline: Event<number, never> = event
     for (let i = 0; i < 10; i++) {
-      pipeline = map((x: number) => x + 1, pipeline);
+      pipeline = map((x: number) => x + 1, pipeline)
     }
 
-    let last = 0;
+    let last = 0
     const d = pulseSubscribe(
       pipeline,
       (v) => {
-        last = v;
+        last = v
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < N; i++) push(i);
-    d.dispose();
-    return last;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    d.dispose()
+    return last
+  })
 
   bench("@most/core", () => {
-    const scheduler = newDefaultScheduler();
-    const [push, stream] = createMostAdapter<number>();
-    let pipeline: Stream<number> = stream;
+    const scheduler = newDefaultScheduler()
+    const [push, stream] = createMostAdapter<number>()
+    let pipeline: Stream<number> = stream
     for (let i = 0; i < 10; i++) {
-      pipeline = mostMap((x: number) => x + 1, pipeline);
+      pipeline = mostMap((x: number) => x + 1, pipeline)
     }
 
-    let last = 0;
+    let last = 0
     const d = mostSubscribe(
       pipeline,
       (v) => {
-        last = v;
+        last = v
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < N; i++) push(i);
-    d.dispose();
-    return last;
-  });
+    for (let i = 0; i < N; i++) push(i)
+    d.dispose()
+    return last
+  })
 
   bench("rxjs", () => {
-    const subject = new Subject<number>();
-    let pipeline = subject.asObservable();
+    const subject = new Subject<number>()
+    let pipeline = subject.asObservable()
     for (let i = 0; i < 10; i++) {
-      pipeline = pipeline.pipe(rxMap((x: number) => x + 1));
+      pipeline = pipeline.pipe(rxMap((x: number) => x + 1))
     }
 
-    let last = 0;
+    let last = 0
     const sub = pipeline.subscribe((v) => {
-      last = v;
-    });
+      last = v
+    })
 
-    for (let i = 0; i < N; i++) subject.next(i);
-    sub.unsubscribe();
-    return last;
-  });
-});
+    for (let i = 0; i < N; i++) subject.next(i)
+    sub.unsubscribe()
+    return last
+  })
+})
 
 // ============================================================
 // 6. take(100) from imperative push (early termination)
@@ -442,54 +442,54 @@ describe("deep pipeline: 10 chained maps (100k push events)", () => {
 
 describe("take(100) from imperative push (10k pushed)", () => {
   bench("pulse", () => {
-    const scheduler = new VirtualScheduler();
-    const [push, event] = createAdapter<number>();
-    const pipeline = take(100, event);
+    const scheduler = new VirtualScheduler()
+    const [push, event] = createAdapter<number>()
+    const pipeline = take(100, event)
 
-    let count = 0;
+    let count = 0
     pulseSubscribe(
       pipeline,
       () => {
-        count++;
+        count++
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < 10_000; i++) push(i);
-    return count;
-  });
+    for (let i = 0; i < 10_000; i++) push(i)
+    return count
+  })
 
   bench("@most/core", () => {
-    const scheduler = newDefaultScheduler();
-    const [push, stream] = createMostAdapter<number>();
-    const pipeline = mostTake(100, stream);
+    const scheduler = newDefaultScheduler()
+    const [push, stream] = createMostAdapter<number>()
+    const pipeline = mostTake(100, stream)
 
-    let count = 0;
+    let count = 0
     mostSubscribe(
       pipeline,
       () => {
-        count++;
+        count++
       },
       scheduler,
-    );
+    )
 
-    for (let i = 0; i < 10_000; i++) push(i);
-    return count;
-  });
+    for (let i = 0; i < 10_000; i++) push(i)
+    return count
+  })
 
   bench("rxjs", () => {
-    const subject = new Subject<number>();
-    const pipeline = subject.pipe(rxTake(100));
+    const subject = new Subject<number>()
+    const pipeline = subject.pipe(rxTake(100))
 
-    let count = 0;
+    let count = 0
     pipeline.subscribe(() => {
-      count++;
-    });
+      count++
+    })
 
-    for (let i = 0; i < 10_000; i++) subject.next(i);
-    return count;
-  });
-});
+    for (let i = 0; i < 10_000; i++) subject.next(i)
+    return count
+  })
+})
 
 // ============================================================
 // 7. Merge of pushed streams
@@ -497,60 +497,60 @@ describe("take(100) from imperative push (10k pushed)", () => {
 
 describe("merge 5 push sources (20k events each, 100k total)", () => {
   bench("pulse", () => {
-    const scheduler = new VirtualScheduler();
-    const adapters = Array.from({ length: 5 }, () => createAdapter<number>());
-    const merged = merge(...adapters.map(([, e]) => e));
+    const scheduler = new VirtualScheduler()
+    const adapters = Array.from({ length: 5 }, () => createAdapter<number>())
+    const merged = merge(...adapters.map(([, e]) => e))
 
-    let count = 0;
+    let count = 0
     const d = pulseSubscribe(
       merged,
       () => {
-        count++;
+        count++
       },
       scheduler,
-    );
+    )
 
     for (let i = 0; i < 20_000; i++) {
-      for (const [push] of adapters) push(i);
+      for (const [push] of adapters) push(i)
     }
-    d.dispose();
-    return count;
-  });
+    d.dispose()
+    return count
+  })
 
   bench("@most/core", () => {
-    const scheduler = newDefaultScheduler();
-    const mostAdapters = Array.from({ length: 5 }, () => createMostAdapter<number>());
-    const merged = mostMergeArray(mostAdapters.map(([, s]) => s));
+    const scheduler = newDefaultScheduler()
+    const mostAdapters = Array.from({ length: 5 }, () => createMostAdapter<number>())
+    const merged = mostMergeArray(mostAdapters.map(([, s]) => s))
 
-    let count = 0;
+    let count = 0
     const d = mostSubscribe(
       merged,
       () => {
-        count++;
+        count++
       },
       scheduler,
-    );
+    )
 
     for (let i = 0; i < 20_000; i++) {
-      for (const [push] of mostAdapters) push(i);
+      for (const [push] of mostAdapters) push(i)
     }
-    d.dispose();
-    return count;
-  });
+    d.dispose()
+    return count
+  })
 
   bench("rxjs", () => {
-    const subjects = Array.from({ length: 5 }, () => new Subject<number>());
-    const merged = rxMerge(...subjects);
+    const subjects = Array.from({ length: 5 }, () => new Subject<number>())
+    const merged = rxMerge(...subjects)
 
-    let count = 0;
+    let count = 0
     const sub = merged.subscribe(() => {
-      count++;
-    });
+      count++
+    })
 
     for (let i = 0; i < 20_000; i++) {
-      for (const s of subjects) s.next(i);
+      for (const s of subjects) s.next(i)
     }
-    sub.unsubscribe();
-    return count;
-  });
-});
+    sub.unsubscribe()
+    return count
+  })
+})
