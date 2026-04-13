@@ -191,13 +191,6 @@ importers:
         version: 5.9.3
 
   packages/effect:
-    dependencies:
-      aeon-core:
-        specifier: workspace:*
-        version: link:../core
-      aeon-types:
-        specifier: workspace:*
-        version: link:../types
     devDependencies:
       '@effect/typeclass':
         specifier: ^0.40.0
@@ -205,12 +198,18 @@ importers:
       '@effect/vitest':
         specifier: ^0.29.0
         version: 0.29.0(effect@3.21.0)(vitest@3.2.4(@types/node@22.19.17)(tsx@4.21.0))
+      aeon-core:
+        specifier: workspace:*
+        version: link:../core
       aeon-scheduler:
         specifier: workspace:*
         version: link:../scheduler
       aeon-test:
         specifier: workspace:*
         version: link:../test
+      aeon-types:
+        specifier: workspace:*
+        version: link:../types
       effect:
         specifier: ^3.21.0
         version: 3.21.0

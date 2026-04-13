@@ -76,19 +76,19 @@
     "test": "vitest run",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "aeon-types": "workspace:*",
-    "aeon-core": "workspace:*"
-  },
   "peerDependencies": {
     "effect": "^3.21.0",
-    "@effect/typeclass": "^0.40.0"
+    "@effect/typeclass": "^0.40.0",
+    "aeon-core": "workspace:^",
+    "aeon-types": "workspace:^"
   },
   "devDependencies": {
     "@effect/typeclass": "^0.40.0",
     "@effect/vitest": "^0.29.0",
+    "aeon-core": "workspace:*",
     "aeon-scheduler": "workspace:*",
     "aeon-test": "workspace:*",
+    "aeon-types": "workspace:*",
     "effect": "^3.21.0",
     "fast-check": "^4.6.0",
     "typescript": "^5.7.2"
