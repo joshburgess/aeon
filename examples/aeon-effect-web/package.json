@@ -1,0 +1,24 @@
+{
+  "name": "aeon-effect-web-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser live-search demo: aeon DOM events + Effect HTTP + the bridge",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "aeon-core": "workspace:*",
+    "aeon-effect": "workspace:*",
+    "aeon-scheduler": "workspace:*",
+    "aeon-types": "workspace:*",
+    "effect": "^3.21.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}
