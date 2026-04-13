@@ -6,7 +6,7 @@
   "author": "Josh Burgess",
   "repository": {
     "type": "git",
-    "url": "https://github.com/joshburgess/aeon",
+    "url": "git+https://github.com/joshburgess/aeon.git",
     "directory": "packages/types"
   },
   "homepage": "https://github.com/joshburgess/aeon#readme",
