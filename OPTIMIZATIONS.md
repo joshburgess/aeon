@@ -4,15 +4,15 @@ Aeon takes direct inspiration from [@most/core](https://github.com/mostjs/core),
 which pioneered a reactive streams architecture designed so that
 [V8](https://v8.dev/) can aggressively inline and optimize. Most notably, @most/core uses monomorphic class
 hierarchies
-for its Source and Sink types — each operator gets its own dedicated class with
+for its Source and Sink types. Each operator gets its own dedicated class with
 a fixed shape, so V8 can build stable hidden classes and inline method dispatch
 throughout the entire event pipeline. This architecture avoids the megamorphic
 call sites and polymorphic inline cache misses that plague more dynamic
 reactive libraries. The result is that @most/core is already one of the fastest
 reactive stream libraries available.
 
-Aeon preserves this core architectural insight — monomorphic classes, stable
-hidden classes, inlineable method chains — and layers additional optimizations
+Aeon preserves this core architectural insight (monomorphic classes, stable
+hidden classes, inlineable method chains) and layers additional optimizations
 on top. This document describes those optimizations. Each section covers the
 motivation, mechanism, and where in the codebase the optimization lives.
 
