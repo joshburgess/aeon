@@ -1,6 +1,6 @@
 {
   "name": "aeon-scheduler",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scheduler implementations for Aeon reactive streams",
   "license": "MIT",
   "author": "Josh Burgess",
