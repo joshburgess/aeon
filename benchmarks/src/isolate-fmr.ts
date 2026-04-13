@@ -36,7 +36,7 @@ async function main() {
     let s: any
     const t0 = performance.now()
     for (let i = 0; i < SCHED_ITER; i++) s = new VirtualScheduler()
-    const pulseTime = performance.now() - t0
+    const aeonTime = performance.now() - t0
 
     const t1 = performance.now()
     for (let i = 0; i < SCHED_ITER; i++) s = newDefaultScheduler()
@@ -44,7 +44,7 @@ async function main() {
 
     console.log(`Scheduler creation (${SCHED_ITER}x):`)
     console.log(
-      `  VirtualScheduler:    ${pulseTime.toFixed(1)}ms  (${((pulseTime / SCHED_ITER) * 1000).toFixed(1)}µs each)`,
+      `  VirtualScheduler:    ${aeonTime.toFixed(1)}ms  (${((aeonTime / SCHED_ITER) * 1000).toFixed(1)}µs each)`,
     )
     console.log(
       `  newDefaultScheduler: ${mostTime.toFixed(1)}ms  (${((mostTime / SCHED_ITER) * 1000).toFixed(1)}µs each)`,
@@ -78,9 +78,9 @@ async function main() {
     const mm = stats(mt)
     const ratio = pm / mm
     console.log("Shared scheduler (reduce vs scan+runEffects):")
-    console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
+    console.log(`  aeon: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
     console.log(
-      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `aeon ${(1 / ratio).toFixed(2)}x faster`}`,
     )
     console.log()
   }
@@ -111,9 +111,9 @@ async function main() {
     const mm = stats(mt)
     const ratio = pm / mm
     console.log("Apples-to-apples scan+drain (shared scheduler):")
-    console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
+    console.log(`  aeon: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
     console.log(
-      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `aeon ${(1 / ratio).toFixed(2)}x faster`}`,
     )
     console.log()
   }
@@ -148,9 +148,9 @@ async function main() {
     const mm = stats(mt)
     const ratio = pm / mm
     console.log("New scheduler each time, scan+drain:")
-    console.log(`  pulse: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
+    console.log(`  aeon: ${pm.toFixed(3)}ms  @most: ${mm.toFixed(3)}ms`)
     console.log(
-      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+      `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `aeon ${(1 / ratio).toFixed(2)}x faster`}`,
     )
   }
 }

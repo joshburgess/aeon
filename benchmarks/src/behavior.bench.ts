@@ -1,5 +1,5 @@
 /**
- * Behavior-specific benchmarks (Pulse only — other libs lack Behaviors).
+ * Behavior-specific benchmarks (Aeon only — other libs lack Behaviors).
  *
  * - liftA2 sampled at 60fps for 10 simulated seconds
  * - stepper with 1M events, sampled at 1000 points
@@ -29,7 +29,7 @@ import { VirtualScheduler } from "aeon-scheduler"
 import { type Behavior, type Duration, type Time, toDuration, toTime } from "aeon-types"
 
 describe("liftA2 sampled at 60fps for 10s", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const a = fromFunction((t: Time) => Math.sin((t as number) / 1000))
     const b = fromFunction((t: Time) => Math.cos((t as number) / 1000))
     const combined = liftA2B((x: number, y: number) => x * x + y * y, a, b)
@@ -43,7 +43,7 @@ describe("liftA2 sampled at 60fps for 10s", () => {
 })
 
 describe("stepper: 1M events, 1000 samples", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
 
@@ -69,7 +69,7 @@ describe("stepper: 1M events, 1000 samples", () => {
 })
 
 describe("switcher: 1000 behavior switches", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [pushSwitch, switchEvent] = createAdapter<Behavior<number, never>>()
 
@@ -85,7 +85,7 @@ describe("switcher: 1000 behavior switches", () => {
 })
 
 describe("mapB chain: 10-deep map of stepper", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
 
@@ -112,7 +112,7 @@ describe("mapB chain: 10-deep map of stepper", () => {
 // ============================================================
 
 describe("accumB: 100k events, sample every 100", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
 
@@ -132,7 +132,7 @@ describe("accumB: 100k events, sample every 100", () => {
 // ============================================================
 
 describe("derivative: sample at 10k points", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const dt = toDuration(0.01)
     // d/dt(sin(t)) = cos(t)
     const b = derivative(
@@ -151,7 +151,7 @@ describe("derivative: sample at 10k points", () => {
 // ============================================================
 
 describe("switchB: time-dependent outer, 10k samples", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     // Outer behavior selects between two inner behaviors based on time
     const inner1 = fromFunction((t: Time) => Math.sin((t as number) / 100))
     const inner2 = fromFunction((t: Time) => Math.cos((t as number) / 100))

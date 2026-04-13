@@ -50,15 +50,15 @@ function stats(times: number[]) {
 
 function report(
   name: string,
-  pulseStats: ReturnType<typeof stats>,
+  aeonStats: ReturnType<typeof stats>,
   mostStats: ReturnType<typeof stats>,
 ) {
-  const ratio = pulseStats.mean / mostStats.mean
+  const ratio = aeonStats.mean / mostStats.mean
   const label =
-    ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`
+    ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `aeon ${(1 / ratio).toFixed(2)}x faster`
   console.log(`  ${name}`)
   console.log(
-    `    pulse:  mean=${pulseStats.mean.toFixed(3)}ms  min=${pulseStats.min.toFixed(3)}ms  p50=${pulseStats.p50.toFixed(3)}ms`,
+    `    aeon:  mean=${aeonStats.mean.toFixed(3)}ms  min=${aeonStats.min.toFixed(3)}ms  p50=${aeonStats.p50.toFixed(3)}ms`,
   )
   console.log(
     `    @most:  mean=${mostStats.mean.toFixed(3)}ms  min=${mostStats.min.toFixed(3)}ms  p50=${mostStats.p50.toFixed(3)}ms`,
@@ -79,27 +79,27 @@ async function bench(fn: () => Promise<unknown>, iterations: number): Promise<nu
 
 async function runBench(
   name: string,
-  pulseFn: () => Promise<unknown>,
+  aeonFn: () => Promise<unknown>,
   mostFn: () => Promise<unknown>,
 ) {
   // Warmup both
-  await bench(pulseFn, WARMUP)
+  await bench(aeonFn, WARMUP)
   await bench(mostFn, WARMUP)
 
   // Alternating measurement to eliminate run-order bias
-  const pulseTimes: number[] = []
+  const aeonTimes: number[] = []
   const mostTimes: number[] = []
   for (let i = 0; i < ITERATIONS; i++) {
     const s1 = performance.now()
-    await pulseFn()
-    pulseTimes.push(performance.now() - s1)
+    await aeonFn()
+    aeonTimes.push(performance.now() - s1)
 
     const s2 = performance.now()
     await mostFn()
     mostTimes.push(performance.now() - s2)
   }
 
-  report(name, stats(pulseTimes), stats(mostTimes))
+  report(name, stats(aeonTimes), stats(mostTimes))
 }
 
 async function main() {
@@ -153,7 +153,7 @@ async function main() {
     },
   )
 
-  // 5. filter → map → reduce (pulse-only advantage — @most has no reduce)
+  // 5. filter → map → reduce (aeon-only advantage — @most has no reduce)
   await runBench(
     "filter → map → reduce",
     async () => {
@@ -211,21 +211,21 @@ async function main() {
     },
   )
 
-  // 9. merge(2 streams) — @most's merge crashes on synchronous sources, so pulse-only
+  // 9. merge(2 streams) — @most's merge crashes on synchronous sources, so aeon-only
   {
     const half = arr.slice(0, 500_000)
     await bench(
       async () => drain(merge(fromArray(half), fromArray(half)), new VirtualScheduler()),
       WARMUP,
     )
-    const pulseTimes = await bench(
+    const aeonTimes = await bench(
       async () => drain(merge(fromArray(half), fromArray(half)), new VirtualScheduler()),
       ITERATIONS,
     )
-    const ps = stats(pulseTimes)
+    const ps = stats(aeonTimes)
     console.log("  merge(2 × 500K)")
     console.log(
-      `    pulse:  mean=${ps.mean.toFixed(3)}ms  min=${ps.min.toFixed(3)}ms  p50=${ps.p50.toFixed(3)}ms`,
+      `    aeon:  mean=${ps.mean.toFixed(3)}ms  min=${ps.min.toFixed(3)}ms  p50=${ps.p50.toFixed(3)}ms`,
     )
     console.log("    (@most crashes on synchronous merge — skipped)")
     console.log()

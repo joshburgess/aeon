@@ -5,7 +5,7 @@
  * (source, sources, f, predicate, n, etc.) to reconstruct the pipeline.
  */
 
-import type { Event as PulseEvent } from "aeon-types"
+import type { Event as AeonEvent } from "aeon-types"
 import { getLabel } from "./label.js"
 
 /** A node in the stream graph tree. */
@@ -19,10 +19,10 @@ export interface StreamNode {
 }
 
 /**
- * Inspect a pulse Event and return its operator chain as a serializable tree.
+ * Inspect a aeon Event and return its operator chain as a serializable tree.
  *
  * This uses heuristic property detection on Source objects to identify
- * operator types. It works with all built-in Pulse operators but may
+ * operator types. It works with all built-in Aeon operators but may
  * not recognize custom Source implementations.
  *
  * ```typescript
@@ -31,7 +31,7 @@ export interface StreamNode {
  * // { type: "map", children: [{ type: "filter", children: [{ type: "source", children: [] }] }] }
  * ```
  */
-export const inspect = <A, E>(event: PulseEvent<A, E>): StreamNode => {
+export const inspect = <A, E>(event: AeonEvent<A, E>): StreamNode => {
   return inspectSource(event as unknown as Record<string, unknown>)
 }
 
@@ -69,7 +69,7 @@ const inspectSource = (source: Record<string, unknown>): StreamNode => {
 }
 
 const classifySource = (source: Record<string, unknown>, ctorName: string): string => {
-  // Try constructor name first — works for all Pulse built-in sources
+  // Try constructor name first — works for all Aeon built-in sources
   const nameMap: Record<string, string> = {
     MapSource: "map",
     FilterSource: "filter",

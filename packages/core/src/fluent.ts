@@ -41,7 +41,7 @@ import { traverse } from "./combinators/traverse.js"
 import { multicast } from "./multicast.js"
 
 /**
- * Chainable wrapper around a pulse Event.
+ * Chainable wrapper around a aeon Event.
  *
  * Every method returns a new FluentEvent (or a terminal value like Promise).
  * The underlying Event is accessible via `.event`.
@@ -265,7 +265,7 @@ export class FluentEvent<A, E> {
 }
 
 /**
- * Wrap a pulse Event in a chainable fluent interface.
+ * Wrap a aeon Event in a chainable fluent interface.
  *
  * ```typescript
  * const result = await fluent(fromArray([1, 2, 3, 4, 5]))

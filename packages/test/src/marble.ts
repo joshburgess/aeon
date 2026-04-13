@@ -1,5 +1,5 @@
 /**
- * Marble testing DSL for Pulse.
+ * Marble testing DSL for Aeon.
  *
  * Marble notation:
  *   - `-`  : one time unit passes (no emission)

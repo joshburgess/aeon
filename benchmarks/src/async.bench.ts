@@ -7,7 +7,7 @@
  * - Higher-order stream management (subscription creation/disposal)
  * - Deep pipeline per-event overhead scaling
  *
- * Three-way comparison: Pulse vs @most/core vs RxJS.
+ * Three-way comparison: Aeon vs @most/core vs RxJS.
  *
  * These complement the sync benchmarks by measuring per-event dispatch
  * cost through the Sink protocol, not sync loop compilation throughput.
@@ -15,12 +15,13 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import {
   type Disposable,
   type Event,
   type Source,
   type Time,
+  mergeMap as aeonMergeMap,
   createAdapter,
   drain,
   filter,
@@ -28,7 +29,6 @@ import {
   map,
   merge,
   multicast,
-  mergeMap as pulseMergeMap,
   scan,
   switchLatest,
   take,
@@ -75,8 +75,8 @@ const N = 100_000
 // Adapter helpers
 // ============================================================
 
-/** Subscribe to a Pulse Event, returns a disposable. */
-const pulseSubscribe = <A, E>(
+/** Subscribe to a Aeon Event, returns a disposable. */
+const aeonSubscribe = <A, E>(
   event: Event<A, E>,
   onEvent: (v: A) => void,
   scheduler: InstanceType<typeof VirtualScheduler>,
@@ -141,13 +141,13 @@ const mostSubscribe = <A>(
 // ============================================================
 
 describe("imperative push: filter → map → scan (100k events)", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
     const pipeline = scan(add, 0, map(double, filter(isEven, event)))
 
     let last = 0
-    const d = pulseSubscribe(
+    const d = aeonSubscribe(
       pipeline,
       (v) => {
         last = v
@@ -199,7 +199,7 @@ describe("imperative push: filter → map → scan (100k events)", () => {
 // ============================================================
 
 describe("multicast fan-out: 1 source → 10 subscribers (100k events)", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
     const shared = multicast(map(double, event))
@@ -208,7 +208,7 @@ describe("multicast fan-out: 1 source → 10 subscribers (100k events)", () => {
     const disposables: Disposable[] = []
     for (let s = 0; s < 10; s++) {
       disposables.push(
-        pulseSubscribe(
+        aeonSubscribe(
           shared,
           (v) => {
             total += v
@@ -276,10 +276,10 @@ describe("mergeMap: 1k outer × 100 inner (100k total events)", () => {
   const outer = range(1000)
   const innerArr = range(100)
 
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(
-      pulseMergeMap(() => fromArray(innerArr), Number.POSITIVE_INFINITY, fromArray(outer)),
+      aeonMergeMap(() => fromArray(innerArr), Number.POSITIVE_INFINITY, fromArray(outer)),
       scheduler,
     )
   })
@@ -326,7 +326,7 @@ describe("switchLatest: 100 switches × 1k inner events", () => {
   const outerCount = 100
   const innerArr = range(1000)
 
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     const outers: Event<number, never>[] = []
     for (let i = 0; i < outerCount; i++) {
@@ -374,7 +374,7 @@ describe("switchLatest: 100 switches × 1k inner events", () => {
 // ============================================================
 
 describe("deep pipeline: 10 chained maps (100k push events)", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
     let pipeline: Event<number, never> = event
@@ -383,7 +383,7 @@ describe("deep pipeline: 10 chained maps (100k push events)", () => {
     }
 
     let last = 0
-    const d = pulseSubscribe(
+    const d = aeonSubscribe(
       pipeline,
       (v) => {
         last = v
@@ -441,13 +441,13 @@ describe("deep pipeline: 10 chained maps (100k push events)", () => {
 // ============================================================
 
 describe("take(100) from imperative push (10k pushed)", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const [push, event] = createAdapter<number>()
     const pipeline = take(100, event)
 
     let count = 0
-    pulseSubscribe(
+    aeonSubscribe(
       pipeline,
       () => {
         count++
@@ -496,13 +496,13 @@ describe("take(100) from imperative push (10k pushed)", () => {
 // ============================================================
 
 describe("merge 5 push sources (20k events each, 100k total)", () => {
-  bench("pulse", () => {
+  bench("aeon", () => {
     const scheduler = new VirtualScheduler()
     const adapters = Array.from({ length: 5 }, () => createAdapter<number>())
     const merged = merge(...adapters.map(([, e]) => e))
 
     let count = 0
-    const d = pulseSubscribe(
+    const d = aeonSubscribe(
       merged,
       () => {
         count++

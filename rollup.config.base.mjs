@@ -4,7 +4,7 @@ import { swc } from "rollup-plugin-swc3"
 export function createRollupConfig({ input = "src/index.ts", external = [] }) {
   return {
     input,
-    external: [...external, /^@pulse\//],
+    external: [...external, /^@aeon\//],
     output: [
       {
         file: "dist/index.js",

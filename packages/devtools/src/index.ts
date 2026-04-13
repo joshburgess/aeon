@@ -1,4 +1,4 @@
-// aeon-devtools — Debug instrumentation for Pulse streams
+// aeon-devtools — Debug instrumentation for Aeon streams
 
 export { label, getLabel } from "./label.js"
 export { trace } from "./trace.js"

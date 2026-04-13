@@ -7,7 +7,7 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import { drain, fromArray, merge } from "aeon-core"
 import { VirtualScheduler } from "aeon-scheduler"
 
@@ -38,7 +38,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   })
 
 describe(`merge (${STREAM_COUNT} × ${ELEMENTS_PER} elements)`, () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     const streams = Array.from({ length: STREAM_COUNT }, () => fromArray(arr))
     await drain(merge(...streams), scheduler)

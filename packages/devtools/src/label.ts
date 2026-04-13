@@ -5,9 +5,9 @@
  * so it's visible in debuggers but doesn't affect runtime behavior.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "aeon-types"
+import type { Event as AeonEvent, Disposable, Scheduler, Sink, Source, Time } from "aeon-types"
 
-const LABEL_KEY = Symbol("pulse/label")
+const LABEL_KEY = Symbol("aeon/label")
 
 export interface Labeled {
   readonly [LABEL_KEY]: string
@@ -41,7 +41,7 @@ class LabeledSource<A, E> implements Source<A, E> {
  * const clicks = label("user-clicks", fromDOMEvent("click", button));
  * ```
  */
-export const label = <A, E>(name: string, event: PulseEvent<A, E>): PulseEvent<A, E> => {
+export const label = <A, E>(name: string, event: AeonEvent<A, E>): AeonEvent<A, E> => {
   const source = event as unknown as Source<A, E>
-  return new LabeledSource(name, source) as unknown as PulseEvent<A, E>
+  return new LabeledSource(name, source) as unknown as AeonEvent<A, E>
 }

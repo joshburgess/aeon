@@ -7,7 +7,7 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import { drain, filter, fromArray, map, reduce, scan } from "aeon-core"
 import { VirtualScheduler } from "aeon-scheduler"
 
@@ -31,7 +31,7 @@ const N = 1_000_000
 const arr = range(N)
 
 describe("filter → map → reduce (1M integers)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), scheduler)
   })

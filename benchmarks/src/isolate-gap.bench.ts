@@ -1,5 +1,5 @@
 /**
- * Isolate the performance gap between pulse and @most/core.
+ * Isolate the performance gap between aeon and @most/core.
  * Tests specific hypotheses about what causes the 1.3-1.6x gap.
  */
 
@@ -34,12 +34,12 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
 describe("H1: scheduler reuse vs creation", () => {
   const reusedScheduler = new VirtualScheduler()
 
-  bench("pulse (new scheduler each time)", async () => {
+  bench("aeon (new scheduler each time)", async () => {
     const s = new VirtualScheduler()
     await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), s)
   })
 
-  bench("pulse (reused scheduler)", async () => {
+  bench("aeon (reused scheduler)", async () => {
     await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), reusedScheduler)
   })
 
@@ -52,7 +52,7 @@ describe("H1: scheduler reuse vs creation", () => {
 // Hypothesis 2: Promise overhead
 // Test synchronous reduce without promise wrapping
 describe("H2: promise vs sync", () => {
-  bench("pulse filter-map-reduce (promise)", async () => {
+  bench("aeon filter-map-reduce (promise)", async () => {
     const s = new VirtualScheduler()
     await reduce(add, 0, map(double, filter(isEven, fromArray(arr))), s)
   })
@@ -72,7 +72,7 @@ describe("H2: promise vs sync", () => {
 // Both create FilterMapSink + ReduceSink per iteration.
 // Test if allocation frequency matters.
 describe("H3: drain(fromArray) — raw loop overhead", () => {
-  bench("pulse drain(fromArray)", async () => {
+  bench("aeon drain(fromArray)", async () => {
     const s = new VirtualScheduler()
     await drain(fromArray(arr), s)
   })
@@ -82,7 +82,7 @@ describe("H3: drain(fromArray) — raw loop overhead", () => {
     await runEffects(mostFromArray(arr), s)
   })
 
-  bench("pulse drain(fromArray) reused scheduler", async () => {
+  bench("aeon drain(fromArray) reused scheduler", async () => {
     const reused = new VirtualScheduler()
     await drain(fromArray(arr), reused)
   })

@@ -2,12 +2,12 @@
  * Benchmarks for new Event operators: dedupe, exhaustMap,
  * race, forkJoin, pairwise, first, last, cons, elementAt.
  *
- * 3-way comparison: Pulse vs @most/core (where equivalent exists) vs RxJS.
+ * 3-way comparison: Aeon vs @most/core (where equivalent exists) vs RxJS.
  */
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import {
   cons,
   dedupe,
@@ -72,7 +72,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
 // --- dedupe (100k, ~10k unique) ---
 
 describe("dedupe (100k, ~10k unique)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(dedupe(fromArray(dupsArr)), scheduler)
   })
@@ -92,7 +92,7 @@ describe("dedupe (100k, ~10k unique)", () => {
 // --- pairwise (100k) ---
 
 describe("pairwise (100k)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(pairwise(fromArray(arr)), scheduler)
   })
@@ -107,7 +107,7 @@ describe("pairwise (100k)", () => {
 // --- first (100k) ---
 
 describe("first (100k — early termination)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(first(fromArray(arr)), scheduler)
   })
@@ -125,7 +125,7 @@ describe("first (100k — early termination)", () => {
 // --- last (100k) ---
 
 describe("last (100k)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(last(fromArray(arr)), scheduler)
   })
@@ -140,7 +140,7 @@ describe("last (100k)", () => {
 // --- cons (100k) ---
 
 describe("cons (100k)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(cons(-1, fromArray(arr)), scheduler)
   })
@@ -164,7 +164,7 @@ const outerArr = range(OUTER)
 const innerArr = range(INNER)
 
 describe("exhaustMap (1000 × 1000)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(
       exhaustMap(() => fromArray(innerArr), fromArray(outerArr)),
@@ -184,7 +184,7 @@ describe("exhaustMap (1000 × 1000)", () => {
 // --- race (5 streams × 100k) ---
 
 describe("race (5 × 100k)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(
       race(fromArray(arr), fromArray(arr), fromArray(arr), fromArray(arr), fromArray(arr)),
@@ -204,7 +204,7 @@ describe("race (5 × 100k)", () => {
 // --- forkJoin (5 streams × 100k) ---
 
 describe("forkJoin (5 × 100k)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(
       forkJoin(fromArray(arr), fromArray(arr), fromArray(arr), fromArray(arr), fromArray(arr)),
@@ -225,7 +225,7 @@ describe("forkJoin (5 × 100k)", () => {
 // --- elementAt (100k, pick middle) ---
 
 describe("elementAt (100k, pick 50000th)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(elementAt(50000, fromArray(arr)), scheduler)
   })

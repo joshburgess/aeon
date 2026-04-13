@@ -3,7 +3,7 @@
  *
  * Run with: node --trace-deopt benchmarks/src/trace-ic.mjs
  *
- * Zero deoptimization events in Pulse code = all hot paths are monomorphic.
+ * Zero deoptimization events in Aeon code = all hot paths are monomorphic.
  */
 
 import { chain, drain, filter, fromArray, map, merge, scan, take } from "aeon-core"

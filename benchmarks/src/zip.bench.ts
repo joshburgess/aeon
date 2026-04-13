@@ -7,7 +7,7 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import { drain, fromArray, zip } from "aeon-core"
 import { VirtualScheduler } from "aeon-scheduler"
 
@@ -38,7 +38,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   })
 
 describe("zip (2 × 10k streams)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(zip(fromArray(arr1), fromArray(arr2)), scheduler)
   })

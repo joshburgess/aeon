@@ -7,7 +7,7 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import { drain, fromArray, map, switchLatest } from "aeon-core"
 import { VirtualScheduler } from "aeon-scheduler"
 
@@ -39,7 +39,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   })
 
 describe("switchLatest (1000 outer × 100 inner)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(switchLatest(map(() => fromArray(innerArr), fromArray(outerArr))), scheduler)
   })

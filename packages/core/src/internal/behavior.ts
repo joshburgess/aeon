@@ -11,7 +11,7 @@ import { _getSource } from "./event.js"
 
 // --- Internal tag ---
 
-const BEHAVIOR_KEY = Symbol("pulse/behavior")
+const BEHAVIOR_KEY = Symbol("aeon/behavior")
 
 /** Discriminated union of behavior implementations. */
 export type BehaviorImpl<A> =

@@ -14,7 +14,7 @@
  *     `time: 0` fires immediately on subscribe; `time: 5` fires five ticks
  *     later, regardless of the scheduler's absolute clock.
  *   - The first `error` or `end` entry terminates the stream; any later
- *     entries are silently dropped. This mirrors pulse's single-termination
+ *     entries are silently dropped. This mirrors aeon's single-termination
  *     invariant.
  *   - If no terminator is supplied, `fromEntries` emits only the value
  *     entries and never ends — use a trailing `{ type: "end" }` to close.

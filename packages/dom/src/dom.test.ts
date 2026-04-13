@@ -47,11 +47,11 @@ class MockEventTarget implements EventTarget {
   }
 }
 
-/** Helper: get the Source from a pulse Event (Event IS Source at runtime). */
+/** Helper: get the Source from a aeon Event (Event IS Source at runtime). */
 const getSource = <A, E>(event: unknown): Source<A, E> => event as Source<A, E>
 
 describe("fromDOMEvent", () => {
-  it("emits DOM events as pulse events", () => {
+  it("emits DOM events as aeon events", () => {
     const scheduler = new VirtualScheduler()
     const target = new MockEventTarget()
     const stream = fromDOMEvent("click", target as unknown as HTMLElement)

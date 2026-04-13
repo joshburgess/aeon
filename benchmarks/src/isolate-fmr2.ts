@@ -50,9 +50,9 @@ async function main() {
   const mmean = mt.reduce((a, b) => a + b) / mt.length
   const ratio = pmean / mmean
   console.log("Alternating, shared scheduler (reduce vs scan+runEffects):")
-  console.log(`  pulse: ${pmean.toFixed(3)}ms  @most: ${mmean.toFixed(3)}ms`)
+  console.log(`  aeon: ${pmean.toFixed(3)}ms  @most: ${mmean.toFixed(3)}ms`)
   console.log(
-    `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `pulse ${(1 / ratio).toFixed(2)}x faster`}`,
+    `  → ${ratio > 1 ? `@most ${ratio.toFixed(2)}x faster` : `aeon ${(1 / ratio).toFixed(2)}x faster`}`,
   )
   console.log()
 
@@ -79,16 +79,16 @@ async function main() {
   const mmean2 = mt2.reduce((a, b) => a + b) / mt2.length
   const ratio2 = pmean2 / mmean2
   console.log("Alternating, shared scheduler, REDUCE ONLY (no filter/map):")
-  console.log(`  pulse: ${pmean2.toFixed(3)}ms  @most: ${mmean2.toFixed(3)}ms`)
+  console.log(`  aeon: ${pmean2.toFixed(3)}ms  @most: ${mmean2.toFixed(3)}ms`)
   console.log(
-    `  → ${ratio2 > 1 ? `@most ${ratio2.toFixed(2)}x faster` : `pulse ${(1 / ratio2).toFixed(2)}x faster`}`,
+    `  → ${ratio2 > 1 ? `@most ${ratio2.toFixed(2)}x faster` : `aeon ${(1 / ratio2).toFixed(2)}x faster`}`,
   )
   console.log()
 
   // Now test the POLYMORPHIC theory — both libraries run in the same V8 context.
   // The sink.event() callsite in FilterMapSink now sees TWO different receiver types
-  // (ReduceSink for pulse, ScanSink for @most) which could deoptimize.
-  // Test pulse ALONE in isolation:
+  // (ReduceSink for aeon, ScanSink for @most) which could deoptimize.
+  // Test aeon ALONE in isolation:
   const pt3: number[] = []
   for (let i = 0; i < ITER; i++) {
     const s1 = performance.now()
@@ -96,8 +96,8 @@ async function main() {
     pt3.push(performance.now() - s1)
   }
   const pmean3 = pt3.reduce((a, b) => a + b) / pt3.length
-  console.log("Pulse ALONE after all warmup (no @most interleaving):")
-  console.log(`  pulse: ${pmean3.toFixed(3)}ms`)
+  console.log("Aeon ALONE after all warmup (no @most interleaving):")
+  console.log(`  aeon: ${pmean3.toFixed(3)}ms`)
   console.log()
 
   // @most ALONE
@@ -108,10 +108,10 @@ async function main() {
     mt3.push(performance.now() - s2)
   }
   const mmean3 = mt3.reduce((a, b) => a + b) / mt3.length
-  console.log("@most ALONE after all warmup (no pulse interleaving):")
+  console.log("@most ALONE after all warmup (no aeon interleaving):")
   console.log(`  @most: ${mmean3.toFixed(3)}ms`)
   console.log(
-    `  → ${pmean3 / mmean3 > 1 ? `@most ${(pmean3 / mmean3).toFixed(2)}x` : `pulse ${(mmean3 / pmean3).toFixed(2)}x`}`,
+    `  → ${pmean3 / mmean3 > 1 ? `@most ${(pmean3 / mmean3).toFixed(2)}x` : `aeon ${(mmean3 / pmean3).toFixed(2)}x`}`,
   )
 }
 

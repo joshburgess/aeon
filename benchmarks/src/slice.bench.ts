@@ -6,7 +6,7 @@
 
 import { bench, describe } from "vitest"
 
-// --- Pulse ---
+// --- Aeon ---
 import { drain, drop, fromArray, take } from "aeon-core"
 import { VirtualScheduler } from "aeon-scheduler"
 
@@ -36,7 +36,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   })
 
 describe("take(100) from 1M", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(take(100, fromArray(arr)), scheduler)
   })
@@ -52,7 +52,7 @@ describe("take(100) from 1M", () => {
 })
 
 describe("drop(999_900) from 1M (take last 100)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const scheduler = new VirtualScheduler()
     await drain(drop(999_900, fromArray(arr)), scheduler)
   })

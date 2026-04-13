@@ -30,7 +30,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
   })
 
 describe("isolate: drain(fromArray(1M)) — raw source speed", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const s = new VirtualScheduler()
     await drain(fromArray(arr), s)
   })
@@ -42,7 +42,7 @@ describe("isolate: drain(fromArray(1M)) — raw source speed", () => {
 })
 
 describe("isolate: map only (1M)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const s = new VirtualScheduler()
     await drain(map(double, fromArray(arr)), s)
   })
@@ -54,7 +54,7 @@ describe("isolate: map only (1M)", () => {
 })
 
 describe("isolate: filter only (1M)", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const s = new VirtualScheduler()
     await drain(filter(isEven, fromArray(arr)), s)
   })
@@ -66,7 +66,7 @@ describe("isolate: filter only (1M)", () => {
 })
 
 describe("isolate: drain(map(double, fromArray(1M))) — one pipeline stage", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const s = new VirtualScheduler()
     await drain(map(double, fromArray(arr)), s)
   })
@@ -78,7 +78,7 @@ describe("isolate: drain(map(double, fromArray(1M))) — one pipeline stage", ()
 })
 
 describe("isolate: reduce(add, 0, fromArray(1M)) — terminal sink", () => {
-  bench("pulse", async () => {
+  bench("aeon", async () => {
     const s = new VirtualScheduler()
     await reduce(add, 0, fromArray(arr), s)
   })

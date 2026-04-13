@@ -1,14 +1,14 @@
 /**
  * Test stream creation from marble notation.
  *
- * Creates a pulse Event that emits values according to a marble string,
+ * Creates a aeon Event that emits values according to a marble string,
  * scheduled on a VirtualScheduler.
  */
 
 import type {
+  Event as AeonEvent,
   Disposable,
   Duration,
-  Event as PulseEvent,
   Scheduler,
   Sink,
   Source,
@@ -84,7 +84,7 @@ class MarbleSource<A, E> implements Source<A, E> {
 }
 
 /**
- * Create a pulse Event from a marble string.
+ * Create a aeon Event from a marble string.
  *
  * Events are scheduled on the provided scheduler. Use with VirtualScheduler
  * and advance/flush to control time.
@@ -99,7 +99,7 @@ export const testEvent = <A, E = never>(
   values: Record<string, A>,
   error?: E,
   timeUnit?: number,
-): PulseEvent<A, E> => {
+): AeonEvent<A, E> => {
   const entries = parseMarble<A, E>(marble, values, error, timeUnit)
-  return new MarbleSource(entries) as unknown as PulseEvent<A, E>
+  return new MarbleSource(entries) as unknown as AeonEvent<A, E>
 }

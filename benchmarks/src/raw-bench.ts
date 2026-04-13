@@ -27,7 +27,7 @@ const mostFromArray = <A>(values: readonly A[]): Stream<A> =>
     return { dispose() {} }
   })
 
-async function benchmarkPulse(iterations: number): Promise<number[]> {
+async function benchmarkAeon(iterations: number): Promise<number[]> {
   const times: number[] = []
   for (let i = 0; i < iterations; i++) {
     const s = new VirtualScheduler()
@@ -61,7 +61,7 @@ function stats(times: number[]) {
   return { mean, min, max, p50, p95, p99 }
 }
 
-async function benchmarkPulseScan(iterations: number): Promise<number[]> {
+async function benchmarkAeonScan(iterations: number): Promise<number[]> {
   const times: number[] = []
   for (let i = 0; i < iterations; i++) {
     const s = new VirtualScheduler()
@@ -90,16 +90,16 @@ async function main() {
   console.log(`filter → map → reduce (${N.toLocaleString()} integers)`)
   console.log(`Warmup: ${WARMUP} iterations, Measure: ${ITERATIONS} iterations\n`)
 
-  // Warmup pulse (isolated — no JIT interference from @most)
-  console.log("Warming up pulse...")
-  await benchmarkPulse(WARMUP)
+  // Warmup aeon (isolated — no JIT interference from @most)
+  console.log("Warming up aeon...")
+  await benchmarkAeon(WARMUP)
 
-  // Measure pulse
-  console.log("Measuring pulse...")
-  const pulseTimes = await benchmarkPulse(ITERATIONS)
-  const pulseStats = stats(pulseTimes)
+  // Measure aeon
+  console.log("Measuring aeon...")
+  const aeonTimes = await benchmarkAeon(ITERATIONS)
+  const aeonStats = stats(aeonTimes)
 
-  // Warmup @most (after pulse is done — separate JIT context for methods)
+  // Warmup @most (after aeon is done — separate JIT context for methods)
   console.log("Warming up @most...")
   await benchmarkMost(WARMUP)
 
@@ -110,42 +110,42 @@ async function main() {
 
   console.log("\n--- Results ---")
   console.log(
-    `pulse:      mean=${pulseStats.mean.toFixed(3)}ms  min=${pulseStats.min.toFixed(3)}ms  p50=${pulseStats.p50.toFixed(3)}ms  p95=${pulseStats.p95.toFixed(3)}ms  p99=${pulseStats.p99.toFixed(3)}ms`,
+    `aeon:      mean=${aeonStats.mean.toFixed(3)}ms  min=${aeonStats.min.toFixed(3)}ms  p50=${aeonStats.p50.toFixed(3)}ms  p95=${aeonStats.p95.toFixed(3)}ms  p99=${aeonStats.p99.toFixed(3)}ms`,
   )
   console.log(
     `@most/core: mean=${mostStats.mean.toFixed(3)}ms  min=${mostStats.min.toFixed(3)}ms  p50=${mostStats.p50.toFixed(3)}ms  p95=${mostStats.p95.toFixed(3)}ms  p99=${mostStats.p99.toFixed(3)}ms`,
   )
-  console.log(`\nRatio (mean): @most is ${(pulseStats.mean / mostStats.mean).toFixed(2)}x faster`)
-  console.log(`Ratio (p50):  @most is ${(pulseStats.p50 / mostStats.p50).toFixed(2)}x faster`)
-  console.log(`Ratio (min):  @most is ${(pulseStats.min / mostStats.min).toFixed(2)}x faster`)
+  console.log(`\nRatio (mean): @most is ${(aeonStats.mean / mostStats.mean).toFixed(2)}x faster`)
+  console.log(`Ratio (p50):  @most is ${(aeonStats.p50 / mostStats.p50).toFixed(2)}x faster`)
+  console.log(`Ratio (min):  @most is ${(aeonStats.min / mostStats.min).toFixed(2)}x faster`)
 
   // Also run in reverse order to check for ordering effects
-  console.log("\n--- Reverse order (measure @most first, then pulse) ---")
+  console.log("\n--- Reverse order (measure @most first, then aeon) ---")
   await benchmarkMost(WARMUP)
   const mostTimes2 = await benchmarkMost(ITERATIONS)
   const mostStats2 = stats(mostTimes2)
 
-  await benchmarkPulse(WARMUP)
-  const pulseTimes2 = await benchmarkPulse(ITERATIONS)
-  const pulseStats2 = stats(pulseTimes2)
+  await benchmarkAeon(WARMUP)
+  const aeonTimes2 = await benchmarkAeon(ITERATIONS)
+  const aeonStats2 = stats(aeonTimes2)
 
   console.log(
-    `pulse:      mean=${pulseStats2.mean.toFixed(3)}ms  min=${pulseStats2.min.toFixed(3)}ms  p50=${pulseStats2.p50.toFixed(3)}ms  p95=${pulseStats2.p95.toFixed(3)}ms`,
+    `aeon:      mean=${aeonStats2.mean.toFixed(3)}ms  min=${aeonStats2.min.toFixed(3)}ms  p50=${aeonStats2.p50.toFixed(3)}ms  p95=${aeonStats2.p95.toFixed(3)}ms`,
   )
   console.log(
     `@most/core: mean=${mostStats2.mean.toFixed(3)}ms  min=${mostStats2.min.toFixed(3)}ms  p50=${mostStats2.p50.toFixed(3)}ms  p95=${mostStats2.p95.toFixed(3)}ms`,
   )
-  console.log(`Ratio (mean): @most is ${(pulseStats2.mean / mostStats2.mean).toFixed(2)}x faster`)
-  console.log(`Ratio (p50):  @most is ${(pulseStats2.p50 / mostStats2.p50).toFixed(2)}x faster`)
-  console.log(`Ratio (min):  @most is ${(pulseStats2.min / mostStats2.min).toFixed(2)}x faster`)
+  console.log(`Ratio (mean): @most is ${(aeonStats2.mean / mostStats2.mean).toFixed(2)}x faster`)
+  console.log(`Ratio (p50):  @most is ${(aeonStats2.p50 / mostStats2.p50).toFixed(2)}x faster`)
+  console.log(`Ratio (min):  @most is ${(aeonStats2.min / mostStats2.min).toFixed(2)}x faster`)
 
   // --- Scan benchmark ---
   console.log("\n\n=== scan (1M integers) ===")
-  console.log("Warming up pulse scan...")
-  await benchmarkPulseScan(WARMUP)
-  console.log("Measuring pulse scan...")
-  const pulseScanTimes = await benchmarkPulseScan(ITERATIONS)
-  const pulseScanStats = stats(pulseScanTimes)
+  console.log("Warming up aeon scan...")
+  await benchmarkAeonScan(WARMUP)
+  console.log("Measuring aeon scan...")
+  const aeonScanTimes = await benchmarkAeonScan(ITERATIONS)
+  const aeonScanStats = stats(aeonScanTimes)
 
   console.log("Warming up @most scan...")
   await benchmarkMostScan(WARMUP)
@@ -155,19 +155,19 @@ async function main() {
 
   console.log("\n--- Scan Results ---")
   console.log(
-    `pulse:      mean=${pulseScanStats.mean.toFixed(3)}ms  min=${pulseScanStats.min.toFixed(3)}ms  p50=${pulseScanStats.p50.toFixed(3)}ms  p95=${pulseScanStats.p95.toFixed(3)}ms`,
+    `aeon:      mean=${aeonScanStats.mean.toFixed(3)}ms  min=${aeonScanStats.min.toFixed(3)}ms  p50=${aeonScanStats.p50.toFixed(3)}ms  p95=${aeonScanStats.p95.toFixed(3)}ms`,
   )
   console.log(
     `@most/core: mean=${mostScanStats.mean.toFixed(3)}ms  min=${mostScanStats.min.toFixed(3)}ms  p50=${mostScanStats.p50.toFixed(3)}ms  p95=${mostScanStats.p95.toFixed(3)}ms`,
   )
   console.log(
-    `Ratio (mean): @most is ${(pulseScanStats.mean / mostScanStats.mean).toFixed(2)}x faster`,
+    `Ratio (mean): @most is ${(aeonScanStats.mean / mostScanStats.mean).toFixed(2)}x faster`,
   )
   console.log(
-    `Ratio (p50):  @most is ${(pulseScanStats.p50 / mostScanStats.p50).toFixed(2)}x faster`,
+    `Ratio (p50):  @most is ${(aeonScanStats.p50 / mostScanStats.p50).toFixed(2)}x faster`,
   )
   console.log(
-    `Ratio (min):  @most is ${(pulseScanStats.min / mostScanStats.min).toFixed(2)}x faster`,
+    `Ratio (min):  @most is ${(aeonScanStats.min / mostScanStats.min).toFixed(2)}x faster`,
   )
 }
 

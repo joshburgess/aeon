@@ -1,11 +1,11 @@
 /**
  * Test collection helpers.
  *
- * Helpers for running a pulse Event and collecting its output
+ * Helpers for running a aeon Event and collecting its output
  * as a structured list of timed entries for assertion.
  */
 
-import type { Disposable, Event as PulseEvent, Scheduler, Sink, Source, Time } from "aeon-types"
+import type { Event as AeonEvent, Disposable, Scheduler, Sink, Source, Time } from "aeon-types"
 
 /** A collected event entry (value, error, or end). */
 export type CollectedEntry<A, E = never> =
@@ -30,7 +30,7 @@ export interface CollectResult<A, E = never> {
 }
 
 /**
- * Subscribe to a pulse Event and collect all emissions.
+ * Subscribe to a aeon Event and collect all emissions.
  *
  * Returns a CollectResult whose `entries`, `values`, `ended`, etc.
  * update live as the scheduler advances. Use with VirtualScheduler:
@@ -45,7 +45,7 @@ export interface CollectResult<A, E = never> {
  * ```
  */
 export const collectEvents = <A, E = never>(
-  event: PulseEvent<A, E>,
+  event: AeonEvent<A, E>,
   scheduler: Scheduler,
 ): CollectResult<A, E> => {
   const entries: CollectedEntry<A, E>[] = []
@@ -88,7 +88,7 @@ export const collectEvents = <A, E = never>(
  * For events backed by synchronous sources (fromArray, now, empty),
  * all values are available immediately without advancing time.
  */
-export const collectSync = <A>(event: PulseEvent<A, never>, scheduler: Scheduler): A[] => {
+export const collectSync = <A>(event: AeonEvent<A, never>, scheduler: Scheduler): A[] => {
   const result = collectEvents(event, scheduler)
   result.disposable.dispose()
   return result.values

@@ -119,7 +119,7 @@ describe("inspect", () => {
       filter((x: number) => x > 0, fromArray([1, 2, 3])),
     )
     const tree = inspect(event)
-    // map∘filter fuses to filterMap in Pulse
+    // map∘filter fuses to filterMap in Aeon
     // The exact tree depends on fusion — just check structure
     expect(tree.type).toBeDefined()
     expect(tree.children.length).toBeGreaterThanOrEqual(0)
