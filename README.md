@@ -4,18 +4,18 @@ A high performance, denotationally designed reactive programming library for Typ
 
 Aeon provides two core abstractions with precise mathematical semantics:
 
-- **Event\<A, E\>** — a discrete stream of time-stamped values with a typed error channel
-- **Behavior\<A, E\>** — a continuous function from time to a value, evaluated lazily when sampled
+- **Event\<A, E\>**: a discrete stream of time-stamped values with a typed error channel
+- **Behavior\<A, E\>**: a continuous function from time to a value, evaluated lazily when sampled
 
 ## Features
 
-- **Denotational semantics** — every combinator has a formal mathematical meaning
-- **Typed error channel** — `E = never` means a stream provably cannot fail
-- **V8-optimized** — monomorphic sink classes, hidden class discipline, construction-time pipeline fusion
-- **Three API styles** — data-first composition, `pipe()` with data-last curried operators, fluent chainable methods
-- **Behaviors** — continuous-time values with generation-based dirty-flag caching, numerical integration and differentiation
-- **Comprehensive** — 50+ operators covering transforms, slicing, combining, higher-order, error handling, time, and aggregation
-- **Small** — 1.5 KB gzipped minimal import, 8.3 KB full `aeon-core` (all combinators)
+- **Denotational semantics**: every combinator has a formal mathematical meaning
+- **Typed error channel**: `E = never` means a stream provably cannot fail
+- **V8-optimized**: monomorphic sink classes, hidden class discipline, construction-time pipeline fusion
+- **Three API styles**: data-first composition, `pipe()` with data-last curried operators, fluent chainable methods
+- **Behaviors**: continuous-time values with generation-based dirty-flag caching, numerical integration and differentiation
+- **Comprehensive**: 50+ operators covering transforms, slicing, combining, higher-order, error handling, time, and aggregation
+- **Small**: 1.5 KB gzipped minimal import, 8.3 KB full `aeon-core` (all combinators)
 
 ## Installation
 
@@ -27,6 +27,7 @@ Optional packages:
 
 ```bash
 pnpm add aeon-dom       # DOM event sources, animation frames, mouse/window behaviors
+pnpm add aeon-effect    # Effect ecosystem integration, typeclass instances, Stream bridge
 pnpm add aeon-test      # Marble testing DSL, virtual scheduler
 pnpm add aeon-devtools  # Stream labeling, tracing, graph inspection
 ```
@@ -81,7 +82,7 @@ await fluent(fromArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
 
 ## Behaviors
 
-Behaviors model continuous values — functions from time that are evaluated lazily when sampled.
+Behaviors model continuous values, functions from time that are evaluated lazily when sampled.
 
 ```typescript
 import { constantB, time, mapB, liftA2B, stepper, sample, readBehavior } from "aeon-core";
@@ -105,6 +106,25 @@ const latest = stepper(0, someEventStream);
 // Bridge: sample reads a Behavior whenever an Event fires
 const sampled = sample(latest, ticker);
 ```
+
+## Effect Integration
+
+The [`aeon-effect`](./packages/effect) package provides [Effect](https://effect.website) ecosystem integration. It includes lawful `@effect/typeclass` instances (`Covariant`, `Monad`, `Applicative`, `Filterable`, etc.) over `Event<A, E>` and a bidirectional bridge between aeon's `Event` and Effect's `Stream`.
+
+```typescript
+import { fromArray, observe } from "aeon-core";
+import { Monad } from "aeon-effect/Event";
+import { toStream, fromStream } from "aeon-effect/bridge";
+import { DefaultScheduler } from "aeon-scheduler";
+
+// Use Event through Effect's typeclass abstractions
+const flat = Monad.flatMap(fromArray([1, 2, 3]), (n) => fromArray([n, n * 10]));
+
+// Convert between aeon Event and Effect Stream
+const stream = toStream(fromArray([1, 2, 3]), new DefaultScheduler());
+```
+
+See the [aeon-effect README](./packages/effect) for canonical instance choices, newtype wrappers, and law testing details.
 
 ## Performance
 
@@ -141,8 +161,8 @@ Tree-shaken bundles produced with esbuild (`pnpm bundle-size`):
 
 | Import | min+gzip | min+brotli |
 |---|---:|---:|
-| Minimal — `now`, `map`, `observe` + `DefaultScheduler` | **1.5 KB** | 1.3 KB |
-| Typical (data-first) — 6 operators + scheduler | **1.9 KB** | 1.8 KB |
+| Minimal: `now`, `map`, `observe` + `DefaultScheduler` | **1.5 KB** | 1.3 KB |
+| Typical (data-first): 6 operators + scheduler | **1.9 KB** | 1.8 KB |
 | `aeon-core` — every combinator, full re-export | **8.3 KB** | 7.5 KB |
 | `aeon-core` + `aeon-scheduler` — full re-export | **9.4 KB** | 8.4 KB |
 
@@ -160,16 +180,17 @@ Per-package dist size (minified, no cross-package inlining):
 | `aeon-test` | Marble testing DSL, virtual scheduler helpers | 1.8 KB |
 | `aeon-scheduler` | Default and virtual time schedulers | 1.2 KB |
 | `aeon-devtools` | Stream labeling, tracing, graph inspection | 1.1 KB |
+| `aeon-effect` | Effect ecosystem integration, typeclass instances, Stream bridge | 0.5 KB |
 | `aeon-dom` | DOM event sources, animation frame behaviors | 1.0 KB |
 | `aeon-types` | Branded types, HKT encoding, interfaces | 0.3 KB |
 
 ## Documentation
 
-- [Getting Started](./docs/getting-started.md) — installation, tutorial, full API reference
-- [Denotational Semantics](./docs/semantics.md) — formal meaning of every type and combinator
-- [Optimizations](./OPTIMIZATIONS.md) — performance architecture and benchmark analysis
-- [Migration from RxJS](./docs/migration-from-rxjs.md) — side-by-side operator comparison
-- [Migration from @most/core](./docs/migration-from-most.md) — side-by-side operator comparison
+- [Getting Started](./docs/getting-started.md): installation, tutorial, full API reference
+- [Denotational Semantics](./docs/semantics.md): formal meaning of every type and combinator
+- [Optimizations](./OPTIMIZATIONS.md): performance architecture and benchmark analysis
+- [Migration from RxJS](./docs/migration-from-rxjs.md): side-by-side operator comparison
+- [Migration from @most/core](./docs/migration-from-most.md): side-by-side operator comparison
 
 ## License
 

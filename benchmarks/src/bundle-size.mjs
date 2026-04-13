@@ -22,7 +22,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../..");
 const fixtureDir = join(repoRoot, "benchmarks/.bundle-fixtures");
 
-const PACKAGES = ["types", "scheduler", "core", "dom", "devtools", "test"];
+const PACKAGES = ["types", "scheduler", "core", "dom", "effect", "devtools", "test"];
 
 const FIXTURES = [
   {
