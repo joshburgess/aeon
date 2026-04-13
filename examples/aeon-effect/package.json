@@ -1,0 +1,26 @@
+{
+  "name": "aeon-effect-examples",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Runnable examples for aeon-effect — typeclass usage and Effect Stream bridging",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "ex:typeclasses": "tsx src/01-typeclasses.ts",
+    "ex:bridge": "tsx src/02-bridge.ts",
+    "ex:newtypes": "tsx src/03-newtypes.ts",
+    "ex:all": "pnpm ex:typeclasses && pnpm ex:bridge && pnpm ex:newtypes"
+  },
+  "dependencies": {
+    "aeon-core": "workspace:*",
+    "aeon-effect": "workspace:*",
+    "aeon-scheduler": "workspace:*",
+    "aeon-types": "workspace:*",
+    "@effect/typeclass": "^0.40.0",
+    "effect": "^3.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
