@@ -10,16 +10,20 @@ import { _createEvent, _getSource } from "../internal/event.js"
 
 class PairwiseSink<A, E> {
   declare readonly sink: Sink<[A, A], E>
-  declare prev: A | typeof UNSET
+  declare prev: A
+  declare init: boolean
 
   constructor(sink: Sink<[A, A], E>) {
     this.sink = sink
-    this.prev = UNSET
+    this.prev = undefined!
+    this.init = true
   }
 
   event(time: Time, value: A): void {
-    if (this.prev !== UNSET) {
-      this.sink.event(time, [this.prev as A, value])
+    if (this.init) {
+      this.init = false
+    } else {
+      this.sink.event(time, [this.prev, value])
     }
     this.prev = value
   }
@@ -32,8 +36,6 @@ class PairwiseSink<A, E> {
     this.sink.end(time)
   }
 }
-
-const UNSET: unique symbol = Symbol("unset")
 
 class PairwiseSource<A, E> implements Source<[A, A], E> {
   declare readonly source: Source<A, E>

@@ -74,28 +74,29 @@ export const first = <A, E>(event: Event<A, E>, predicate?: (a: A) => boolean): 
 
 class LastSink<A, E> extends Pipe<A, E> {
   declare readonly predicate: ((a: A) => boolean) | undefined
-  declare latest: A | typeof UNSET
+  declare latest: A
+  declare hasValue: boolean
 
   constructor(predicate: ((a: A) => boolean) | undefined, sink: Sink<A, E>) {
     super(sink)
     this.predicate = predicate
-    this.latest = UNSET
+    this.latest = undefined!
+    this.hasValue = false
   }
 
   event(_time: Time, value: A): void {
     if (this.predicate !== undefined && !this.predicate(value)) return
     this.latest = value
+    this.hasValue = true
   }
 
   end(time: Time): void {
-    if (this.latest !== UNSET) {
-      this.sink.event(time, this.latest as A)
+    if (this.hasValue) {
+      this.sink.event(time, this.latest)
     }
     this.sink.end(time)
   }
 }
-
-const UNSET: unique symbol = Symbol("unset")
 
 class LastSource<A, E> implements Source<A, E> {
   declare readonly predicate: ((a: A) => boolean) | undefined
